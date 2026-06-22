@@ -1,0 +1,10 @@
+# IntelliJ
+.idea/
+*.iml
+
+# Environment variables (secrets)
+.env
+*.env
+
+# OS
+.DS_Store
