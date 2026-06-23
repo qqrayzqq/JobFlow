@@ -2,16 +2,14 @@ package com.jobflow.jobservice.service;
 
 import com.jobflow.jobservice.domain.User;
 import com.jobflow.jobservice.domain.enums.UserRole;
-import com.jobflow.jobservice.dto.AuthResponse;
-import com.jobflow.jobservice.dto.LoginRequest;
-import com.jobflow.jobservice.dto.RegisterRequest;
+import com.jobflow.jobservice.dto.auth.AuthResponse;
+import com.jobflow.jobservice.dto.auth.LoginRequest;
+import com.jobflow.jobservice.dto.auth.RegisterRequest;
 import com.jobflow.jobservice.repository.UserRepository;
 import com.jobflow.jobservice.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service

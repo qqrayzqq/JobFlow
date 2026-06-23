@@ -1,8 +1,8 @@
 package com.jobflow.jobservice.controller;
 
-import com.jobflow.jobservice.dto.AuthResponse;
-import com.jobflow.jobservice.dto.LoginRequest;
-import com.jobflow.jobservice.dto.RegisterRequest;
+import com.jobflow.jobservice.dto.auth.AuthResponse;
+import com.jobflow.jobservice.dto.auth.LoginRequest;
+import com.jobflow.jobservice.dto.auth.RegisterRequest;
 import com.jobflow.jobservice.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
