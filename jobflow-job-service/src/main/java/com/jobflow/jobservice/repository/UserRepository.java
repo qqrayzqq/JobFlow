@@ -15,4 +15,8 @@ public class UserRepository {
     public Optional<User> findByEmail(String email){
         return Optional.empty();
     }
+
+    public User save(User user){
+        return user;
+    }
 }
