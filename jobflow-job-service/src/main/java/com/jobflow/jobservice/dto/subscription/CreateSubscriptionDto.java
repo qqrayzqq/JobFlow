@@ -1,3 +1,12 @@
 package com.jobflow.jobservice.dto.subscription;
 
-public record CreateSubscriptionDto(Long userId, String skill) {}
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+public record CreateSubscriptionDto(
+        @NotNull
+        Long userId,
+        @NotBlank
+        String skill
+) {
+}
