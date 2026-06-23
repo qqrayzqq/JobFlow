@@ -2,7 +2,6 @@ package com.jobflow.jobservice.repository;
 
 import com.jobflow.jobservice.domain.User;
 import com.jobflow.jobservice.jooq.Tables;
-import com.jobflow.jobservice.jooq.tables.records.UsersRecord;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
@@ -17,6 +16,12 @@ public class UserRepository {
     public Optional<User> findByEmail(String email){
         return dsl.selectFrom(Tables.USERS)
                 .where(Tables.USERS.EMAIL.eq(email))
+                .fetchOptionalInto(User.class);
+    }
+
+    public Optional<User> findById(Long id) {
+        return dsl.selectFrom(Tables.USERS)
+                .where(Tables.USERS.ID.eq(id))
                 .fetchOptionalInto(User.class);
     }
 
