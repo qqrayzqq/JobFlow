@@ -9,3 +9,5 @@ databaseChangeLog:
       file: classpath:/db/changelog/004-create-applications.sql
   - include:
       file: classpath:/db/changelog/005-create-subscriptions.sql
+  - include:
+      file: classpath:/db/changelog/006-alter-jobs-skills.sql
