@@ -4,6 +4,7 @@ import com.jobflow.jobservice.domain.Job;
 import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.job.CreateJobDto;
 import com.jobflow.jobservice.dto.job.UpdateJobDto;
+import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,9 +21,8 @@ public class JobService {
     }
 
     public Job updateJob(Long id, UpdateJobDto dto) {
-        var jobOptional = jobRepository.findById(id);
-        if(jobOptional.isEmpty()) throw new IllegalArgumentException("job with this id doesn't exist");
-        Job job = jobOptional.get();
+        Job job = jobRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
         job.setCity(dto.city());
         job.setDescription(dto.description());
         job.setSkills(dto.skills());
@@ -38,9 +38,8 @@ public class JobService {
     }
 
     public Job getJobById(Long id) {
-        var jobOptional = jobRepository.findById(id);
-        if(jobOptional.isEmpty()) throw new IllegalArgumentException("job with this id doesn't exist");
-        return jobOptional.get();
+        return jobRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
     }
 
     public List<Job> getJobsByCompany(Long companyId) {
