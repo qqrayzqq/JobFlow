@@ -7,6 +7,8 @@ import com.jobflow.jobservice.dto.job.UpdateJobDto;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +22,7 @@ public class JobService {
         return jobRepository.save(new Job(dto.title(), dto.city(), dto.description(), dto.companyId(), dto.salaryMax(), dto.salaryMin(), dto.skills(), dto.status()));
     }
 
+    @CacheEvict(value = "jobs", key = "#id")
     public Job updateJob(Long id, UpdateJobDto dto) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
@@ -33,10 +36,12 @@ public class JobService {
         return jobRepository.update(job);
     }
 
+    @CacheEvict(value = "jobs", key = "#id")
     public void deleteJob(Long id) {
         jobRepository.delete(id);
     }
 
+    @Cacheable(value = "jobs", key = "#id")
     public Job getJobById(Long id) {
         return jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found"));

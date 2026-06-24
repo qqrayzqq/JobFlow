@@ -7,6 +7,8 @@ import com.jobflow.jobservice.exception.DuplicateResourceException;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +23,7 @@ public class CompanyService {
         return companyRepository.save(new Company(dto.name(), dto.city(), dto.description(), dto.userId()));
     }
 
+    @CacheEvict(value = "companies", key = "#id")
     public Company updateCompany(Long id, UpdateCompanyDto dto) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
@@ -32,10 +35,12 @@ public class CompanyService {
         return companyRepository.update(company);
     }
 
+    @CacheEvict(value = "companies", key = "#id")
     public void deleteCompany(Long id) {
         companyRepository.delete(id);
     }
 
+    @Cacheable(value = "companies", key = "#id")
     public Company getCompanyById(Long id) {
         return companyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
