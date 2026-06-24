@@ -21,14 +21,15 @@ public class RedisCacheConfig {
                 .enableUnsafeDefaultTyping()
                 .build();
 
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10))
+        RedisCacheConfiguration baseConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(serializer)
                 );
 
         return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
+                .cacheDefaults(baseConfig.entryTtl(Duration.ofMinutes(10)))
+                .withCacheConfiguration("jobs", baseConfig.entryTtl(Duration.ofMinutes(10)))
+                .withCacheConfiguration("companies", baseConfig.entryTtl(Duration.ofHours(1)))
                 .build();
     }
 }
