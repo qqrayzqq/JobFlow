@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +26,7 @@ public class ApplicationController {
 
     @Operation(summary = "Apply for a job")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Application created"),
+            @ApiResponse(responseCode = "201", description = "Application created"),
             @ApiResponse(responseCode = "400", description = "Validation error or duplicate application"),
             @ApiResponse(responseCode = "403", description = "Access denied"),
             @ApiResponse(responseCode = "404", description = "Job or candidate not found")
@@ -33,7 +34,7 @@ public class ApplicationController {
     @PostMapping
     @PreAuthorize("hasRole('CANDIDATE')")
     public ResponseEntity<Application> createApplication(@Valid @RequestBody CreateApplicationDto dto) {
-        return ResponseEntity.ok(applicationService.createApplication(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(applicationService.createApplication(dto));
     }
 
     @Operation(summary = "Update application status")

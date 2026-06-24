@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,14 +26,14 @@ public class CompanyController {
 
     @Operation(summary = "Create company")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Company created"),
+            @ApiResponse(responseCode = "201", description = "Company created"),
             @ApiResponse(responseCode = "400", description = "Validation error"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
     @PostMapping
     @PreAuthorize("hasRole('COMPANY')")
     public ResponseEntity<Company> createCompany(@Valid @RequestBody CreateCompanyDto dto) {
-        return ResponseEntity.ok(companyService.createCompany(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(companyService.createCompany(dto));
     }
 
     @Operation(summary = "Update company")
