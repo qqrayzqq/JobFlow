@@ -41,7 +41,7 @@ public class JobService {
         jobRepository.delete(id);
     }
 
-    @Cacheable(value = "jobs", key = "#id")
+    @Cacheable(value = "jobs", key = "#id", unless = "#result.status.name() != 'PUBLISHED'")
     public Job getJobById(Long id) {
         return jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
