@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,12 +34,12 @@ public class AuthController {
 
     @Operation(summary = "Register new user")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User registered"),
+            @ApiResponse(responseCode = "201", description = "User registered"),
             @ApiResponse(responseCode = "400", description = "Validation error"),
             @ApiResponse(responseCode = "409", description = "Email already exists")
     })
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest dto) {
-        return ResponseEntity.ok(authService.register(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(dto));
     }
 }

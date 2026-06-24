@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,14 +27,14 @@ public class JobController {
 
     @Operation(summary = "Create job posting")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Job created"),
+            @ApiResponse(responseCode = "201", description = "Job created"),
             @ApiResponse(responseCode = "400", description = "Validation error"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
     @PostMapping
     @PreAuthorize("hasRole('COMPANY')")
     public ResponseEntity<Job> createJob(@Valid @RequestBody CreateJobDto dto) {
-        return ResponseEntity.ok(jobService.createJob(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(jobService.createJob(dto));
     }
 
     @Operation(summary = "Update job posting")
