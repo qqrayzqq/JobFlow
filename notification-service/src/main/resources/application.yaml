@@ -2,11 +2,14 @@ spring:
   application:
     name: notification-service
 
+  config:
+    import: "optional:file:.env[.properties]"
+
   mail:
     host: sandbox.smtp.mailtrap.io
     port: 2525
-    username: 9762b503b72768
-    password: ed8de7ca1b356f
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:

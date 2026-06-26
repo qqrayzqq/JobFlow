@@ -2,10 +2,13 @@ spring:
   application:
     name: jobflow-job-service
 
+  config:
+    import: "optional:file:.env[.properties]"
+
   datasource:
     url: jdbc:postgresql://localhost:5432/jobflow
     username: jobflow
-    password: jobflow
+    password: ${DB_PASSWORD}
 
   data:
     redis:
@@ -31,5 +34,5 @@ server:
   port: 8080
 
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  secret: ${JWT_SECRET}
   expiration: 86400000
