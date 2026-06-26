@@ -14,6 +14,12 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      properties:
+        enable.idempotence: true
 
   elasticsearch:
     uris: http://localhost:9200
