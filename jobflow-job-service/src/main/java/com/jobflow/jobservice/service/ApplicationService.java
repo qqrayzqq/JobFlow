@@ -1,16 +1,22 @@
 package com.jobflow.jobservice.service;
 
+import com.jobflow.jobservice.config.KafkaTopicConfig;
 import com.jobflow.jobservice.domain.Application;
+import com.jobflow.jobservice.domain.Job;
+import com.jobflow.jobservice.domain.User;
 import com.jobflow.jobservice.dto.application.CreateApplicationDto;
 import com.jobflow.jobservice.dto.application.UpdateApplicationStatusDto;
+import com.jobflow.jobservice.event.ApplicationCreatedEvent;
 import com.jobflow.jobservice.exception.DuplicateResourceException;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.ApplicationRepository;
 import com.jobflow.jobservice.repository.JobRepository;
 import com.jobflow.jobservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -19,13 +25,17 @@ public class ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public Application createApplication(CreateApplicationDto dto) {
-        if (jobRepository.findById(dto.jobId()).isEmpty()) throw new ResourceNotFoundException("Job not found");
-        if (userRepository.findById(dto.candidateId()).isEmpty()) throw new ResourceNotFoundException("Candidate not found");
+        Job job = jobRepository.findById(dto.jobId()).orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+        User candidate = userRepository.findById(dto.candidateId()).orElseThrow(() -> new ResourceNotFoundException("Candidate not found"));
         if (applicationRepository.findByJobIdAndCandidateId(dto.jobId(), dto.candidateId()).isPresent())
             throw new DuplicateResourceException("Application already exists");
-        return applicationRepository.save(new Application(dto.jobId(), dto.candidateId()));
+        Application saved = applicationRepository.save(new Application(dto.jobId(), dto.candidateId()));
+        ApplicationCreatedEvent applicationCreatedEvent = new ApplicationCreatedEvent(saved.getId(), saved.getJobId(), saved.getCandidateId(), candidate.getEmail(), job.getTitle(), Instant.now());
+        kafkaTemplate.send(KafkaTopicConfig.APPLICATION_CREATED_TOPIC, applicationCreatedEvent);
+        return saved;
     }
 
     public Application updateStatus(Long id, UpdateApplicationStatusDto dto) {
