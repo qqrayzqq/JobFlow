@@ -8,6 +8,7 @@ import com.jobflow.jobservice.dto.application.CreateApplicationDto;
 import com.jobflow.jobservice.dto.application.UpdateApplicationStatusDto;
 import com.jobflow.jobservice.event.ApplicationCreatedEvent;
 import com.jobflow.jobservice.exception.DuplicateResourceException;
+import com.jobflow.jobservice.exception.RateLimitExceededException;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.ApplicationRepository;
 import com.jobflow.jobservice.repository.JobRepository;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -26,12 +28,19 @@ public class ApplicationService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final RateLimiterService rateLimiterService;
 
     public Application createApplication(CreateApplicationDto dto) {
+        String key = "ratelimit:apply:" + dto.candidateId();
+        if (!rateLimiterService.tryAcquire(key, 5, Duration.ofMinutes(1))) {
+            throw new RateLimitExceededException("Too many applications, try again later");
+        }
+
         Job job = jobRepository.findById(dto.jobId()).orElseThrow(() -> new ResourceNotFoundException("Job not found"));
         User candidate = userRepository.findById(dto.candidateId()).orElseThrow(() -> new ResourceNotFoundException("Candidate not found"));
         if (applicationRepository.findByJobIdAndCandidateId(dto.jobId(), dto.candidateId()).isPresent())
             throw new DuplicateResourceException("Application already exists");
+
         Application saved = applicationRepository.save(new Application(dto.jobId(), dto.candidateId()));
         ApplicationCreatedEvent applicationCreatedEvent = new ApplicationCreatedEvent(saved.getId(), saved.getJobId(), saved.getCandidateId(), candidate.getEmail(), job.getTitle(), Instant.now());
         kafkaTemplate.send(KafkaTopicConfig.APPLICATION_CREATED_TOPIC, applicationCreatedEvent);
