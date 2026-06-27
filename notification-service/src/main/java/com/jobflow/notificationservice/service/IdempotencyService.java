@@ -16,10 +16,12 @@ public class IdempotencyService {
 
     // returns true only the FIRST time this id is seen; false on duplicates
     public boolean isFirstProcessing(Long applicationId) {
-        // TODO ТЫ: setIfAbsent("processed:application:" + applicationId, "1", TTL)
-        //          вернуть true если ключ реально записался (значит первый раз)
         Boolean seen = redisTemplate.opsForValue().setIfAbsent("processed:application:" + applicationId, "1", TTL);
         if(seen != null) return seen;
         return true;
+    }
+
+    public void release(Long applicationId){
+        redisTemplate.delete("processed:application:" + applicationId);
     }
 }

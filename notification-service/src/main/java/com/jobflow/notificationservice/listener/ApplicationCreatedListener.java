@@ -21,6 +21,11 @@ public class ApplicationCreatedListener {
             log.info("Duplicate event for application {}, skipping", event.applicationId());
             return;
         }
-        emailService.sendApplicationConfirmation(event.candidateEmail(), event.jobTitle());
+        try {
+            emailService.sendApplicationConfirmation(event.candidateEmail(), event.jobTitle());
+        }catch (Exception e){
+            idempotencyService.release(event.applicationId());
+            throw e;
+        }
     }
 }
