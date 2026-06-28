@@ -131,4 +131,11 @@ public class JobController {
             @RequestParam(required = false) Integer maxSalary) {
         return ResponseEntity.ok(jobService.searchJobs(q, city, status, minSalary, maxSalary));
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/reindex")
+    public ResponseEntity<Void> reindex(){
+        jobService.reindex();
+        return ResponseEntity.ok().build();
+    }
 }
