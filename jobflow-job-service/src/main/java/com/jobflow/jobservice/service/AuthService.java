@@ -12,17 +12,20 @@ import com.jobflow.jobservice.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 
 @RequiredArgsConstructor
 @Service
+@Transactional(readOnly = true)
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RateLimiterService rateLimiterService;
 
+    @Transactional
     public AuthResponse register(RegisterRequest dto) {
         if (dto.role() == UserRole.ADMIN) throw new IllegalArgumentException("Role ADMIN is not allowed for registration");
         if (userRepository.findByEmail(dto.email()).isPresent()) throw new DuplicateResourceException("Email already taken");
