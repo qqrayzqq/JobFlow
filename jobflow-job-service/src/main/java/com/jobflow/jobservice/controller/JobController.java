@@ -5,6 +5,7 @@ import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.job.CreateJobDto;
 import com.jobflow.jobservice.dto.job.UpdateJobDto;
 import com.jobflow.jobservice.service.JobService;
+import com.jobflow.jobservice.service.ViewCounterService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -24,6 +25,7 @@ import java.util.List;
 @RequestMapping("/api/jobs")
 public class JobController {
     private final JobService jobService;
+    private final ViewCounterService viewCounterService;
 
     @Operation(summary = "Create job posting")
     @ApiResponses({
@@ -70,6 +72,7 @@ public class JobController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<Job> getJobById(@PathVariable Long id) {
+        viewCounterService.increment(id);
         return ResponseEntity.ok(jobService.getJobById(id));
     }
 
@@ -99,5 +102,12 @@ public class JobController {
     @GetMapping("/city/{city}")
     public ResponseEntity<List<Job>> getJobsByCity(@PathVariable String city) {
         return ResponseEntity.ok(jobService.getJobsByCity(city));
+    }
+
+    @Operation(summary = "Get job views")
+    @ApiResponse(responseCode = "200", description = "Job views")
+    @GetMapping("/{id}/views")
+    public ResponseEntity<Long> getJobViews(@PathVariable Long id){
+        return ResponseEntity.ok(viewCounterService.getViews(id));
     }
 }
