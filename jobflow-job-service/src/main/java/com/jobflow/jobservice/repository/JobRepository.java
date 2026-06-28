@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
@@ -84,5 +84,17 @@ public class JobRepository {
                 .set(Tables.JOBS.VIEWS, Tables.JOBS.VIEWS.plus(delta))
                 .where(Tables.JOBS.ID.eq(id))
                 .execute();
+    }
+
+    public Set<String> findAllSkills(){
+        List<String> rows = dsl.select(Tables.JOBS.SKILLS)
+                .from(Tables.JOBS)
+                .fetch(Tables.JOBS.SKILLS);
+        return rows.stream()
+                .filter(Objects::nonNull)
+                .flatMap(row -> Arrays.stream(row.split(",")))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toSet());
     }
 }

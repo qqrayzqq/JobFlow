@@ -19,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -110,6 +111,13 @@ public class JobController {
     @GetMapping("/{id}/views")
     public ResponseEntity<Long> getJobViews(@PathVariable Long id){
         return ResponseEntity.ok(viewCounterService.getViews(id));
+    }
+
+    @Operation(summary = "Get all distinct skills")
+    @ApiResponse(responseCode = "200", description = "Set of skills")
+    @GetMapping("/skills")
+    public ResponseEntity<Set<String>> getAllSkills() {
+        return ResponseEntity.ok(jobService.getAllSkills());
     }
 
     @Operation(summary = "Full-text search jobs")

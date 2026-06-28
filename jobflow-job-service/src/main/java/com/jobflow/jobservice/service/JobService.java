@@ -11,6 +11,7 @@ import com.jobflow.jobservice.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +43,7 @@ public class JobService {
     }
 
     @Transactional
+    @CacheEvict(value = "skills", allEntries = true)
     public Job createJob(CreateJobDto dto) {
         Job job = jobRepository.save(new Job(dto.title(), dto.city(), dto.description(), dto.companyId(), dto.salaryMax(), dto.salaryMin(), dto.skills(), dto.status()));
         jobSearchRepository.save(toDocument(job));
@@ -48,7 +51,10 @@ public class JobService {
     }
 
     @Transactional
-    @CacheEvict(value = "jobs", key = "#id")
+    @Caching(evict = {
+            @CacheEvict(value = "jobs", key = "#id"),
+            @CacheEvict(value = "skills", allEntries = true)
+    })
     public Job updateJob(Long id, UpdateJobDto dto) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
@@ -91,6 +97,11 @@ public class JobService {
 
     public List<Job> getJobsByCity(String city) {
         return jobRepository.findByCity(city);
+    }
+
+    @Cacheable("skills")
+    public Set<String> getAllSkills() {
+        return jobRepository.findAllSkills();
     }
 
     public List<JobDocument> searchJobs(String text, String city, String status, Integer minSalary, Integer maxSalary){
