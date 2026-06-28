@@ -31,6 +31,8 @@ public class Job {
 
     private Long companyId;
 
+    private Long views;
+
     public Job(String title, String city, String description, Long companyId, Integer salaryMax, Integer salaryMin, String skills, JobStatus status) {
         this.title = title;
         this.city = city;

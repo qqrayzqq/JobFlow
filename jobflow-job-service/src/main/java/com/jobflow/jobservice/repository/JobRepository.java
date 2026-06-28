@@ -78,4 +78,11 @@ public class JobRepository {
                 .where(Tables.JOBS.CITY.eq(city))
                 .fetchInto(Job.class);
     }
+
+    public void addViews(Long id, long delta){
+        dsl.update(Tables.JOBS)
+                .set(Tables.JOBS.VIEWS, Tables.JOBS.VIEWS.plus(delta))
+                .where(Tables.JOBS.ID.eq(id))
+                .execute();
+    }
 }

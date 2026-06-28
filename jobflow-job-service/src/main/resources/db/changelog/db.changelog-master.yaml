@@ -11,3 +11,5 @@ databaseChangeLog:
       file: classpath:/db/changelog/005-create-subscriptions.sql
   - include:
       file: classpath:/db/changelog/006-alter-jobs-skills.sql
+  - include:
+      file: classpath:/db/changelog/007-alter-jobs-views.sql
