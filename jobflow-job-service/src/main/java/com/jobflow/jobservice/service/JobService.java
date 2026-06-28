@@ -133,4 +133,12 @@ public class JobService {
                 .map(SearchHit::getContent)
                 .toList();
     }
+
+    // NOTE: loads the whole table at once; for large datasets use keyset pagination
+    // (WHERE id > lastId ORDER BY id LIMIT n) + bulk saveAll per batch.
+    public void reindex() {
+        List<Job> allJobs = jobRepository.findAll();
+        List<JobDocument> jobDocuments = allJobs.stream().map(this::toDocument).toList();
+        jobSearchRepository.saveAll(jobDocuments);
+    }
 }

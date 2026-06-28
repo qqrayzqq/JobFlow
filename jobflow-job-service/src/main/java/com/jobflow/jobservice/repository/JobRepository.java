@@ -97,4 +97,9 @@ public class JobRepository {
                 .filter(s -> !s.isBlank())
                 .collect(Collectors.toSet());
     }
+
+    public List<Job> findAll() {
+        return dsl.selectFrom(Tables.JOBS)
+                .fetchInto(Job.class);
+    }
 }
