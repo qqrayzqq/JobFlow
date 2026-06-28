@@ -16,6 +16,7 @@ import com.jobflow.jobservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -23,6 +24,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final JobRepository jobRepository;
@@ -30,6 +32,7 @@ public class ApplicationService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final RateLimiterService rateLimiterService;
 
+    @Transactional
     public Application createApplication(CreateApplicationDto dto) {
         String key = "ratelimit:apply:" + dto.candidateId();
         if (!rateLimiterService.tryAcquire(key, 5, Duration.ofMinutes(1))) {
@@ -47,11 +50,13 @@ public class ApplicationService {
         return saved;
     }
 
+    @Transactional
     public Application updateStatus(Long id, UpdateApplicationStatusDto dto) {
         if (applicationRepository.findById(id).isEmpty()) throw new ResourceNotFoundException("Application not found");
         return applicationRepository.updateStatus(id, dto.status());
     }
 
+    @Transactional
     public void deleteApplication(Long id) {
         applicationRepository.delete(id);
     }

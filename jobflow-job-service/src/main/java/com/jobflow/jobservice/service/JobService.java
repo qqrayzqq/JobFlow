@@ -10,18 +10,22 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class JobService {
     private final JobRepository jobRepository;
 
+    @Transactional
     public Job createJob(CreateJobDto dto) {
         return jobRepository.save(new Job(dto.title(), dto.city(), dto.description(), dto.companyId(), dto.salaryMax(), dto.salaryMin(), dto.skills(), dto.status()));
     }
 
+    @Transactional
     @CacheEvict(value = "jobs", key = "#id")
     public Job updateJob(Long id, UpdateJobDto dto) {
         Job job = jobRepository.findById(id)
@@ -36,6 +40,7 @@ public class JobService {
         return jobRepository.update(job);
     }
 
+    @Transactional
     @CacheEvict(value = "jobs", key = "#id")
     public void deleteJob(Long id) {
         jobRepository.delete(id);

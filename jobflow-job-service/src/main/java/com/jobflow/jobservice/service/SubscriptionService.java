@@ -8,15 +8,18 @@ import com.jobflow.jobservice.repository.SubscriptionRepository;
 import com.jobflow.jobservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
 
+    @Transactional
     public Subscription createSubscription(CreateSubscriptionDto dto) {
         if (userRepository.findById(dto.userId()).isEmpty()) throw new ResourceNotFoundException("User not found");
         if (subscriptionRepository.findByUserIdAndSkill(dto.userId(), dto.skill()).isPresent())
@@ -24,6 +27,7 @@ public class SubscriptionService {
         return subscriptionRepository.save(new Subscription(dto.userId(), dto.skill()));
     }
 
+    @Transactional
     public void deleteSubscription(Long id) {
         subscriptionRepository.delete(id);
     }
