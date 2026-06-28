@@ -32,9 +32,9 @@ public class JobDocument {
     @Field(type = FieldType.Keyword)
     private String status;
 
-    @Field(type = FieldType.Keyword)
+    @Field(type = FieldType.Integer)
     private Integer salaryMin;
 
-    @Field(type = FieldType.Keyword)
+    @Field(type = FieldType.Integer)
     private Integer salaryMax;
 }

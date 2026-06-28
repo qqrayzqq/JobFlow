@@ -11,6 +11,9 @@ import com.jobflow.jobservice.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,7 @@ import java.util.List;
 public class JobService {
     private final JobRepository jobRepository;
     private final JobSearchRepository jobSearchRepository;
+    private final ElasticsearchOperations operations;
 
     private JobDocument toDocument(Job job) {
         JobDocument doc = new JobDocument();
@@ -89,7 +93,33 @@ public class JobService {
         return jobRepository.findByCity(city);
     }
 
-    public List<JobDocument> search(String text){
-        return jobSearchRepository.search(text);
+    public List<JobDocument> searchJobs(String text, String city, String status, Integer minSalary, Integer maxSalary){
+        NativeQuery query = NativeQuery.builder()
+                .withQuery(q->q.bool(b->{
+                    if(text != null && !text.isBlank()){
+                        b.must(m -> m.multiMatch(mm -> mm.query(text)
+                                .fields("title", "description", "skills")));
+                    }else{
+                        b.must(m -> m.matchAll(ma -> ma));
+                    }
+                    if (city != null && !city.isBlank()) {
+                        b.filter(f -> f.term(t -> t.field("city").value(city)));
+                    }
+                    if (status != null && !status.isBlank()) {
+                        b.filter(f -> f.term(t -> t.field("status").value(status)));
+                    }
+                    if (minSalary != null) {
+                        b.filter(f -> f.range(r -> r.number(n -> n.field("salaryMin").gte(minSalary.doubleValue()))));
+                    }
+                    if (maxSalary != null) {
+                        b.filter(f -> f.range(r -> r.number(n -> n.field("salaryMax").lte(maxSalary.doubleValue()))));
+                    }
+                    return b;
+                }))
+                .build();
+        return operations.search(query, JobDocument.class)
+                .stream()
+                .map(SearchHit::getContent)
+                .toList();
     }
 }

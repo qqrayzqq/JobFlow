@@ -115,7 +115,12 @@ public class JobController {
     @Operation(summary = "Full-text search jobs")
     @ApiResponse(responseCode = "200", description = "Search results")
     @GetMapping("/search")
-    public ResponseEntity<List<JobDocument>> search(@RequestParam String q) {
-        return ResponseEntity.ok(jobService.search(q));
+    public ResponseEntity<List<JobDocument>> search(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer minSalary,
+            @RequestParam(required = false) Integer maxSalary) {
+        return ResponseEntity.ok(jobService.searchJobs(q, city, status, minSalary, maxSalary));
     }
 }
