@@ -4,6 +4,7 @@ import com.jobflow.jobservice.domain.Job;
 import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.job.CreateJobDto;
 import com.jobflow.jobservice.dto.job.UpdateJobDto;
+import com.jobflow.jobservice.elasticsearch.JobDocument;
 import com.jobflow.jobservice.service.JobService;
 import com.jobflow.jobservice.service.ViewCounterService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -109,5 +110,12 @@ public class JobController {
     @GetMapping("/{id}/views")
     public ResponseEntity<Long> getJobViews(@PathVariable Long id){
         return ResponseEntity.ok(viewCounterService.getViews(id));
+    }
+
+    @Operation(summary = "Full-text search jobs")
+    @ApiResponse(responseCode = "200", description = "Search results")
+    @GetMapping("/search")
+    public ResponseEntity<List<JobDocument>> search(@RequestParam String q) {
+        return ResponseEntity.ok(jobService.search(q));
     }
 }
