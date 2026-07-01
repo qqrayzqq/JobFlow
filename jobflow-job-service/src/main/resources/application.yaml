@@ -43,6 +43,15 @@ logging:
       max-file-size: 10MB            # roll over when a file reaches 10MB
       max-history: 7                 # keep 7 archived files, delete older
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info          # expose ONLY these; everything else stays off
+  endpoint:
+    health:
+      show-details: when_authorized    # component details (db, redis, disk) only for authenticated users
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: 86400000
