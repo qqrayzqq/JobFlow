@@ -61,17 +61,17 @@ The two services are **decoupled via Kafka**: the job-service publishes an event
 
 ```mermaid
 graph TD
-    Client -->|HTTP + JWT Bearer| Filter[JwtFilter<br/>validate token, set SecurityContext]
-    Filter --> Controller[REST Controllers<br/>@PreAuthorize + @Valid]
-    Controller -->|delegates| Service[Service Layer<br/>@Transactional business logic]
-    Service -->|type-safe SQL| Repository[Repository Layer<br/>jOOQ / DSLContext]
-    Repository --> PostgreSQL[(PostgreSQL<br/>schema via Liquibase)]
-    Service -->|@Cacheable / @CacheEvict| Redis[(Redis<br/>cache + rate limit + views)]
-    Service -->|full-text search| Elasticsearch[(Elasticsearch)]
-    Service -->|ApplicationCreatedEvent| Kafka[[Kafka topic<br/>application-created]]
-    Kafka --> Consumer[notification-service<br/>@KafkaListener]
-    Consumer -->|idempotent dedup via Redis| Email[Email via Mailtrap]
-    Client -->|no auth| Actuator[/actuator/health/]
+    Client -->|"HTTP + JWT Bearer"| Filter["JwtFilter<br/>validate token, set SecurityContext"]
+    Filter --> Controller["REST Controllers<br/>@PreAuthorize + @Valid"]
+    Controller -->|delegates| Service["Service Layer<br/>@Transactional business logic"]
+    Service -->|"type-safe SQL"| Repository["Repository Layer<br/>jOOQ / DSLContext"]
+    Repository --> PostgreSQL[("PostgreSQL<br/>schema via Liquibase")]
+    Service -->|"@Cacheable / @CacheEvict"| Redis[("Redis<br/>cache + rate limit + views")]
+    Service -->|"full-text search"| Elasticsearch[("Elasticsearch")]
+    Service -->|"ApplicationCreatedEvent"| Kafka[["Kafka topic<br/>application-created"]]
+    Kafka --> Consumer["notification-service<br/>@KafkaListener"]
+    Consumer -->|"idempotent dedup via Redis"| Email["Email via Mailtrap"]
+    Client -->|"no auth"| Actuator["/actuator/health"]
 ```
 
 ---
