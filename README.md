@@ -53,7 +53,8 @@ The two services are **decoupled via Kafka**: the job-service publishes an event
 - **Distinct skills endpoint** — aggregates all skills across postings for the subscription UI
 - **Event-driven email** — Kafka producer on application creation → consumer → Mailtrap, with idempotent de-duplication (Redis reserve + release, at-least-once safe)
 - **Global error handling** — `ResourceNotFoundException → 404`, `DuplicateResourceException → 409`, validation → `400`, rate limit → `429`, catch-all → `500` (stack trace logged, generic message returned)
-- **Observability** — Actuator health/metrics + an AOP `@Around` aspect logging every service call (entry/exit/duration) to a rotating file
+- **API documentation** — interactive Swagger UI (Springdoc OpenAPI) with Bearer-JWT auth, served publicly
+- **Observability** — public `/actuator/health` (component details shown only when authorized) + an AOP `@Around` aspect logging every service call (entry/exit/duration) to a rotating file
 
 ---
 
@@ -196,7 +197,7 @@ curl "http://localhost:8080/api/jobs/search?q=java&city=Praha&minSalary=1000"
 
 ## Security Model
 
-All endpoints require `Authorization: Bearer <token>` except `register`, `login`, and public `GET /api/jobs/**`.
+All endpoints require `Authorization: Bearer <token>` except the public ones: `register`, `login`, `GET /api/jobs/**`, Swagger UI (`/swagger-ui/**`, `/v3/api-docs/**`), and `/actuator/health`. All other actuator endpoints require authentication.
 
 | Role | Access |
 |---|---|
