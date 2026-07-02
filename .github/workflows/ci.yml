@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: jobflow
+          POSTGRES_USER: jobflow
+          POSTGRES_PASSWORD: jobflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Apply DB schema for jOOQ codegen
+        run: |
+          for f in jobflow-job-service/src/main/resources/db/changelog/0*.sql; do
+            PGPASSWORD=jobflow psql -h localhost -U jobflow -d jobflow -f "$f"
+          done
+
+      - name: Build and test
+        working-directory: jobflow-job-service
+        run: |
+          chmod +x mvnw
+          ./mvnw -B test
