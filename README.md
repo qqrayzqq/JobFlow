@@ -219,14 +219,17 @@ Unit tests (JUnit 5 + Mockito) — business logic in isolation
 
 Web-layer tests (@WebMvcTest + MockMvc) — HTTP status, JSON, validation, error mapping
   JobControllerTest         AuthControllerTest
+
+Integration tests (@SpringBootTest + Testcontainers) — full stack on real containers
+  AuthIntegrationTest       JobIntegrationTest
 ```
 
 ```bash
-# from jobflow-job-service (Postgres must be running for jOOQ codegen)
+# from jobflow-job-service (Docker + Postgres running: Testcontainers, jOOQ codegen)
 ./mvnw test
 ```
 
-Tests follow the pyramid: many fast unit tests, fewer web-slice tests, integration tests (Testcontainers) planned. Mockito verifies both return values (`assertThat`) and side effects (`verify`) — e.g. that an application publishes a Kafka event and that passwords are hashed before saving.
+Tests follow the pyramid: many fast unit tests, fewer web-slice tests, and a few integration tests against real Postgres / Redis / Kafka / Elasticsearch via Testcontainers (end-to-end auth, `@PreAuthorize` access control, and Elasticsearch search). Mockito verifies both return values (`assertThat`) and side effects (`verify`) — e.g. that an application publishes a Kafka event and that passwords are hashed before saving.
 
 ---
 
@@ -291,7 +294,6 @@ erDiagram
 
 ## Roadmap
 
-- [ ] Integration tests with Testcontainers (real Postgres / Redis / Kafka / Elasticsearch)
 - [ ] CI/CD pipeline (GitHub Actions + secrets)
 - [ ] Multi-stage Dockerfiles + `env_file` secrets + dev/prod Spring profiles
 - [ ] Access + refresh token rotation with revocation
@@ -307,4 +309,4 @@ erDiagram
 - Keeping Elasticsearch in sync with Postgres as a derived search index, and understanding the dual-write problem
 - Using Redis for three distinct jobs: caching, rate limiting (fixed-window), and a write-buffered view counter
 - Centralized error handling and cross-cutting logging via AOP (`@Around` proxy)
-- Testing at multiple layers — unit (Mockito) and web-slice (`@WebMvcTest` + MockMvc) — and knowing what is worth testing vs. what is framework noise
+- Testing at multiple layers — unit (Mockito), web-slice (`@WebMvcTest` + MockMvc), and integration (`@SpringBootTest` + Testcontainers on real infrastructure) — and knowing what is worth testing vs. what is framework noise
