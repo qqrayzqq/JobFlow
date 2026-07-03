@@ -43,6 +43,7 @@ jobs:
         working-directory: jobflow-job-service
         env:
           DB_PASSWORD: jobflow
+          JWT_SECRET: am9iZmxvdy1jaS1qd3Qtc2VjcmV0LWtleS1mb3ItdGVzdGluZy1vbmx5LTMyYitleHRyYS1wYWRkaW5nLTEyMzQ1Njc4OTA=
         run: |
           chmod +x mvnw
           ./mvnw -B test
