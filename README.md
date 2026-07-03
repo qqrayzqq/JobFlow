@@ -1,5 +1,7 @@
 # JobFlow
 
+[![CI](https://github.com/qqrayzqq/JobFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/qqrayzqq/JobFlow/actions/workflows/ci.yml)
+
 A job board platform built as a portfolio project to demonstrate production-ready backend development with Java and Spring Boot. Two microservices communicating asynchronously over Kafka — covering the full backend stack: security, domain logic, caching, full-text search, event-driven messaging, observability, and testing.
 
 ---
@@ -294,7 +296,6 @@ erDiagram
 
 ## Roadmap
 
-- [ ] CI/CD pipeline (GitHub Actions + secrets)
 - [ ] Multi-stage Dockerfiles + `env_file` secrets + dev/prod Spring profiles
 - [ ] Access + refresh token rotation with revocation
 - [ ] Kafka type mapping (aliases) for future status events
@@ -310,3 +311,4 @@ erDiagram
 - Using Redis for three distinct jobs: caching, rate limiting (fixed-window), and a write-buffered view counter
 - Centralized error handling and cross-cutting logging via AOP (`@Around` proxy)
 - Testing at multiple layers — unit (Mockito), web-slice (`@WebMvcTest` + MockMvc), and integration (`@SpringBootTest` + Testcontainers on real infrastructure) — and knowing what is worth testing vs. what is framework noise
+- Automating build + tests in CI (GitHub Actions) on a clean runner, which surfaced env-config gaps that only a machine without my local `.env` and Docker would expose
