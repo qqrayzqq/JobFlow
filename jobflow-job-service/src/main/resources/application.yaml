@@ -2,30 +2,20 @@ spring:
   application:
     name: jobflow-job-service
 
-  config:
-    import: "optional:file:.env[.properties],optional:file:../.env[.properties]"
+  profiles:
+    active: dev                      # default when nothing is set; compose overrides to prod
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/jobflow
     username: jobflow
     password: ${DB_PASSWORD}
 
-  data:
-    redis:
-      host: localhost
-      port: 6379
-
   kafka:
-    bootstrap-servers: localhost:9092
     producer:
       acks: all
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
       properties:
         enable.idempotence: true
-
-  elasticsearch:
-    uris: http://localhost:9200
 
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yaml
