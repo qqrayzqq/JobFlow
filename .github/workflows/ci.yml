@@ -41,6 +41,8 @@ jobs:
 
       - name: Build and test
         working-directory: jobflow-job-service
+        env:
+          DB_PASSWORD: jobflow
         run: |
           chmod +x mvnw
           ./mvnw -B test
