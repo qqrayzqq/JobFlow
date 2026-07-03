@@ -139,26 +139,45 @@ sequenceDiagram
 **Prerequisites:** Docker Desktop, Java 21, Maven
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/qqrayzqq/JobFlow.git
 cd JobFlow
+cp .env.example .env   # fill in the values
+```
 
-# 2. Start infrastructure (Postgres, Redis, Kafka, Elasticsearch)
-docker compose up -d
+Configuration is split into Spring profiles: `dev` (default, services run on the host)
+and `prod` (services run as containers, addressing infrastructure by service name).
 
-# 3. Run the job-service (Liquibase migrations run automatically on startup)
-cd jobflow-job-service
-./mvnw spring-boot:run
+### Option A — services from the IDE (dev profile)
 
-# 4. In another terminal, run the notification-service
-cd notification-service
-mvn spring-boot:run
+```bash
+# Start infrastructure only
+docker compose up -d postgres redis kafka elasticsearch
+
+# Run each service (dev profile is the default; Liquibase migrates on startup)
+cd jobflow-job-service && ./mvnw spring-boot:run
+cd notification-service && mvn spring-boot:run   # in another terminal
+```
+
+### Option B — full stack in Docker (prod profile)
+
+```bash
+# 1. Postgres must be up so jOOQ can read the schema during the job-service build
+docker compose up -d postgres
+
+# 2. Package the job-service jar (its image copies the jar, it is not built inside Docker)
+cd jobflow-job-service && ./mvnw clean package -DskipTests && cd ..
+
+# 3. Build images and start everything (services get SPRING_PROFILES_ACTIVE=prod)
+docker compose up -d --build
 ```
 
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - Health check: `http://localhost:8080/actuator/health`
 
-> **Note:** the job-service uses jOOQ code generation against the live database, so Postgres must be running before the build (`docker compose up -d postgres`).
+> **Why is the job-service jar built outside Docker?** jOOQ generates code from the live
+> database schema during the Maven build. An isolated `docker build` has no database, so the
+> jar is packaged on the host (with Postgres running) and only copied into the runtime image.
+> The `notification-service` has no such dependency and is built fully inside its multi-stage Dockerfile.
 
 ---
 
