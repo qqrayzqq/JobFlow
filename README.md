@@ -4,6 +4,8 @@
 
 A job board platform built as a portfolio project to demonstrate production-ready backend development with Java and Spring Boot. Two microservices communicating asynchronously over Kafka — covering the full backend stack: security, domain logic, caching, full-text search, event-driven messaging, observability, and testing.
 
+**Frontend:** [jobflow-frontend](https://github.com/qqrayzqq/jobflow-frontend)
+
 ---
 
 ## Tech Stack
@@ -315,7 +317,6 @@ erDiagram
 
 ## Roadmap
 
-- [ ] Multi-stage Dockerfiles + `env_file` secrets + dev/prod Spring profiles
 - [ ] Access + refresh token rotation with revocation
 - [ ] Kafka type mapping (aliases) for future status events
 
