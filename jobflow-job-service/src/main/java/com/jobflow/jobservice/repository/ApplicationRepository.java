@@ -32,6 +32,10 @@ public class ApplicationRepository {
                 .fetchOneInto(Application.class);
     }
 
+    public List<Application> findAll() {
+        return dsl.selectFrom(Tables.APPLICATIONS).fetchInto(Application.class);
+    }
+
     public Optional<Application> findById(Long id) {
         return dsl.selectFrom(Tables.APPLICATIONS)
                 .where(Tables.APPLICATIONS.ID.eq(id))

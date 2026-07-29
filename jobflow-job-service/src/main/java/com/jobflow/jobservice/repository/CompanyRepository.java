@@ -53,6 +53,16 @@ public class CompanyRepository {
                 .fetchOptionalInto(Company.class);
     }
 
+    public Optional<Company> findByUserId(Long userId) {
+        return dsl.selectFrom(Tables.COMPANIES)
+                .where(Tables.COMPANIES.USER_ID.eq(userId))
+                .fetchOptionalInto(Company.class);
+    }
+
+    public List<Company> findAll() {
+        return dsl.selectFrom(Tables.COMPANIES).fetchInto(Company.class);
+    }
+
     public List<Company> findByCities(List<String> cities) {
         return dsl.selectFrom(Tables.COMPANIES)
                 .where(Tables.COMPANIES.CITY.in(cities))
