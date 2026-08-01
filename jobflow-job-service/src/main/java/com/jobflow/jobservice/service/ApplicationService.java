@@ -4,10 +4,12 @@ import com.jobflow.jobservice.config.KafkaTopicConfig;
 import com.jobflow.jobservice.domain.Application;
 import com.jobflow.jobservice.domain.Job;
 import com.jobflow.jobservice.domain.User;
+import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.application.CreateApplicationDto;
 import com.jobflow.jobservice.dto.application.UpdateApplicationStatusDto;
 import com.jobflow.jobservice.event.ApplicationCreatedEvent;
 import com.jobflow.jobservice.exception.DuplicateResourceException;
+import com.jobflow.jobservice.exception.JobNotPublishedException;
 import com.jobflow.jobservice.exception.RateLimitExceededException;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.ApplicationRepository;
@@ -40,6 +42,8 @@ public class ApplicationService {
         }
 
         Job job = jobRepository.findById(dto.jobId()).orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+        if (job.getStatus() != JobStatus.PUBLISHED)
+            throw new JobNotPublishedException("Job is not accepting applications");
         User candidate = userRepository.findById(dto.candidateId()).orElseThrow(() -> new ResourceNotFoundException("Candidate not found"));
         if (applicationRepository.findByJobIdAndCandidateId(dto.jobId(), dto.candidateId()).isPresent())
             throw new DuplicateResourceException("Application already exists");
