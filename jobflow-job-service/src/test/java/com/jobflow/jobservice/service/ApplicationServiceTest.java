@@ -5,10 +5,12 @@ import com.jobflow.jobservice.domain.Application;
 import com.jobflow.jobservice.domain.Job;
 import com.jobflow.jobservice.domain.User;
 import com.jobflow.jobservice.domain.enums.ApplicationStatus;
+import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.application.CreateApplicationDto;
 import com.jobflow.jobservice.dto.application.UpdateApplicationStatusDto;
 import com.jobflow.jobservice.event.ApplicationCreatedEvent;
 import com.jobflow.jobservice.exception.DuplicateResourceException;
+import com.jobflow.jobservice.exception.JobNotPublishedException;
 import com.jobflow.jobservice.exception.RateLimitExceededException;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.ApplicationRepository;
@@ -62,6 +64,23 @@ class ApplicationServiceTest {
     }
 
     @Test
+    void createApplication_jobNotPublished_throwsJobNotPublishedException() {
+        when(rateLimiterService.tryAcquire("ratelimit:apply:2", 5, Duration.ofMinutes(1))).thenReturn(true);
+
+        CreateApplicationDto dto = new CreateApplicationDto(
+                1L,
+                2L
+        );
+
+        Job draftJob = new Job();
+        draftJob.setStatus(JobStatus.DRAFT);
+        when(jobRepository.findById(dto.jobId())).thenReturn(Optional.of(draftJob));
+
+        assertThatThrownBy(() -> applicationService.createApplication(dto)).isInstanceOf(JobNotPublishedException.class);
+        verify(kafkaTemplate, never()).send(any(), any());
+    }
+
+    @Test
     void createApplication_duplicate_throwsDuplicateResourceException() {
         when(rateLimiterService.tryAcquire("ratelimit:apply:2", 5, Duration.ofMinutes(1))).thenReturn(true);
 
@@ -70,7 +89,9 @@ class ApplicationServiceTest {
                 2L
         );
 
-        when(jobRepository.findById(dto.jobId())).thenReturn(Optional.of(new Job()));
+        Job publishedJob = new Job();
+        publishedJob.setStatus(JobStatus.PUBLISHED);
+        when(jobRepository.findById(dto.jobId())).thenReturn(Optional.of(publishedJob));
         when(userRepository.findById(dto.candidateId())).thenReturn(Optional.of(new User()));
         when(applicationRepository.findByJobIdAndCandidateId(dto.jobId(), dto.candidateId())).thenReturn(Optional.of(new Application(1L, 2L)));
 
@@ -88,7 +109,9 @@ class ApplicationServiceTest {
                 2L
         );
 
-        when(jobRepository.findById(dto.jobId())).thenReturn(Optional.of(new Job()));
+        Job publishedJob = new Job();
+        publishedJob.setStatus(JobStatus.PUBLISHED);
+        when(jobRepository.findById(dto.jobId())).thenReturn(Optional.of(publishedJob));
         when(userRepository.findById(dto.candidateId())).thenReturn(Optional.of(new User()));
         when(applicationRepository.findByJobIdAndCandidateId(dto.jobId(), dto.candidateId())).thenReturn(Optional.empty());
         when(applicationRepository.save(any(Application.class))).thenReturn(new Application(1L, 2L));
