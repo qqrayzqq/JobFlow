@@ -3,6 +3,7 @@ package com.jobflow.jobservice.controller;
 import com.jobflow.jobservice.domain.Application;
 import com.jobflow.jobservice.dto.application.CreateApplicationDto;
 import com.jobflow.jobservice.dto.application.UpdateApplicationStatusDto;
+import com.jobflow.jobservice.security.UserDetailsPrincipal;
 import com.jobflow.jobservice.service.ApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,8 +48,9 @@ public class ApplicationController {
     })
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('COMPANY')")
-    public ResponseEntity<Application> updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateApplicationStatusDto dto) {
-        return ResponseEntity.ok(applicationService.updateStatus(id, dto));
+    public ResponseEntity<Application> updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateApplicationStatusDto dto,
+                                                     @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        return ResponseEntity.ok(applicationService.updateStatus(id, dto, authenticatedUser.getId()));
     }
 
     @Operation(summary = "Delete application")
@@ -58,8 +61,8 @@ public class ApplicationController {
     })
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('CANDIDATE') or hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteApplication(@PathVariable Long id) {
-        applicationService.deleteApplication(id);
+    public ResponseEntity<Void> deleteApplication(@PathVariable Long id, @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        applicationService.deleteApplication(id, authenticatedUser.getId(), authenticatedUser.getRole());
         return ResponseEntity.noContent().build();
     }
 

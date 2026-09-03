@@ -79,7 +79,7 @@ class AuthServiceTest {
         );
 
         when(userRepository.findByEmail(dto.email())).thenReturn(Optional.empty());
-        when(jwtService.generateToken(dto.email())).thenReturn("token");
+        when(jwtService.generateToken(any(User.class))).thenReturn("token");
 
         AuthResponse response = authService.register(dto);
 
@@ -125,7 +125,7 @@ class AuthServiceTest {
         );
 
         when(userRepository.findByEmail(dto.email())).thenReturn(Optional.of(new User("test@gmail.com", "tester", "hashed", UserRole.CANDIDATE)));
-        when(jwtService.generateToken(dto.email())).thenReturn("token");
+        when(jwtService.generateToken(any(User.class))).thenReturn("token");
         when(passwordEncoder.matches("testpass", "hashed")).thenReturn(true);
 
         AuthResponse response = authService.login(dto);

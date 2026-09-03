@@ -3,6 +3,7 @@ package com.jobflow.jobservice.controller;
 import com.jobflow.jobservice.domain.Company;
 import com.jobflow.jobservice.dto.company.CreateCompanyDto;
 import com.jobflow.jobservice.dto.company.UpdateCompanyDto;
+import com.jobflow.jobservice.security.UserDetailsPrincipal;
 import com.jobflow.jobservice.service.CompanyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,8 +47,9 @@ public class CompanyController {
     })
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('COMPANY')")
-    public ResponseEntity<Company> updateCompany(@PathVariable Long id, @Valid @RequestBody UpdateCompanyDto dto) {
-        return ResponseEntity.ok(companyService.updateCompany(id, dto));
+    public ResponseEntity<Company> updateCompany(@PathVariable Long id, @Valid @RequestBody UpdateCompanyDto dto,
+                                                 @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        return ResponseEntity.ok(companyService.updateCompany(id, dto, authenticatedUser.getId()));
     }
 
     @Operation(summary = "Delete company")
@@ -57,8 +60,8 @@ public class CompanyController {
     })
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('COMPANY') or hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteCompany(@PathVariable Long id) {
-        companyService.deleteCompany(id);
+    public ResponseEntity<Void> deleteCompany(@PathVariable Long id, @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        companyService.deleteCompany(id, authenticatedUser.getId(), authenticatedUser.getRole());
         return ResponseEntity.noContent().build();
     }
 

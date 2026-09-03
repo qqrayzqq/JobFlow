@@ -2,6 +2,7 @@ package com.jobflow.jobservice.service;
 
 import com.jobflow.jobservice.config.KafkaTopicConfig;
 import com.jobflow.jobservice.domain.Application;
+import com.jobflow.jobservice.domain.Company;
 import com.jobflow.jobservice.domain.Job;
 import com.jobflow.jobservice.domain.User;
 import com.jobflow.jobservice.domain.enums.ApplicationStatus;
@@ -14,6 +15,7 @@ import com.jobflow.jobservice.exception.JobNotPublishedException;
 import com.jobflow.jobservice.exception.RateLimitExceededException;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.ApplicationRepository;
+import com.jobflow.jobservice.repository.CompanyRepository;
 import com.jobflow.jobservice.repository.JobRepository;
 import com.jobflow.jobservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +41,8 @@ class ApplicationServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
+    private CompanyRepository companyRepository;
+    @Mock
     private KafkaTemplate<String, Object> kafkaTemplate;
     @Mock
     private RateLimiterService rateLimiterService;
@@ -47,7 +51,7 @@ class ApplicationServiceTest {
 
     @BeforeEach
     void setUp(){
-        applicationService = new ApplicationService(applicationRepository, jobRepository, userRepository, kafkaTemplate, rateLimiterService);
+        applicationService = new ApplicationService(applicationRepository, jobRepository, userRepository, companyRepository, kafkaTemplate, rateLimiterService);
     }
 
     @Test
@@ -129,12 +133,17 @@ class ApplicationServiceTest {
 
         UpdateApplicationStatusDto dto = new UpdateApplicationStatusDto(ApplicationStatus.REJECTED);
 
-        assertThatThrownBy(() -> applicationService.updateStatus(1L, dto)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> applicationService.updateStatus(1L, dto, 1L)).isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void updateStatus_success_updatesStatus() {
         when(applicationRepository.findById(1L)).thenReturn(Optional.of(new Application(1L, 1L)));
+
+        Job job = new Job();
+        job.setCompanyId(10L);
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(companyRepository.findById(10L)).thenReturn(Optional.of(new Company("DHL", "Praha", "", 5L)));
 
         UpdateApplicationStatusDto dto = new UpdateApplicationStatusDto(ApplicationStatus.REJECTED);
 
@@ -142,7 +151,7 @@ class ApplicationServiceTest {
         updated.setStatus(ApplicationStatus.REJECTED);
         when(applicationRepository.updateStatus(1L, dto.status())).thenReturn(updated);
 
-        Application result = applicationService.updateStatus(1L, dto);
+        Application result = applicationService.updateStatus(1L, dto, 5L);
 
         assertThat(result.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
     }

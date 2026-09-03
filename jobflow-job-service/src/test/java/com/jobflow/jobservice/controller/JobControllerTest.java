@@ -5,14 +5,19 @@ import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.job.UpdateJobDto;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.security.JwtService;
+import com.jobflow.jobservice.security.UserDetailsPrincipal;
 import com.jobflow.jobservice.security.UserDetailsServiceImpl;
 import com.jobflow.jobservice.service.JobService;
 import com.jobflow.jobservice.service.ViewCounterService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
@@ -51,6 +56,18 @@ class JobControllerTest {
 
     @MockitoBean
     private UserDetailsServiceImpl userDetailsService;
+
+    @BeforeEach
+    void setUpAuth() {
+        UserDetailsPrincipal principal = new UserDetailsPrincipal("test@gmail.com", null, "COMPANY", 1L);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+    }
+
+    @AfterEach
+    void clearAuth() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void getAllSkills_returns200WithSkills() throws Exception {
@@ -133,7 +150,7 @@ class JobControllerTest {
     @Test
     void updateJob_notFound_returns404() throws Exception {
         UpdateJobDto dto = new UpdateJobDto("Backend Dev", "Praha", "desc", JobStatus.PUBLISHED, 1000, 2000, "Java,Spring");
-        when(jobService.updateJob(eq(1L), any())).thenThrow(new ResourceNotFoundException("Job not found"));
+        when(jobService.updateJob(eq(1L), any(), any())).thenThrow(new ResourceNotFoundException("Job not found"));
 
         mockMvc.perform(put("/api/jobs/1")
                         .contentType(MediaType.APPLICATION_JSON)

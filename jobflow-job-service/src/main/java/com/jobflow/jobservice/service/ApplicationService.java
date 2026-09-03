@@ -2,6 +2,7 @@ package com.jobflow.jobservice.service;
 
 import com.jobflow.jobservice.config.KafkaTopicConfig;
 import com.jobflow.jobservice.domain.Application;
+import com.jobflow.jobservice.domain.Company;
 import com.jobflow.jobservice.domain.Job;
 import com.jobflow.jobservice.domain.User;
 import com.jobflow.jobservice.domain.enums.JobStatus;
@@ -13,16 +14,19 @@ import com.jobflow.jobservice.exception.JobNotPublishedException;
 import com.jobflow.jobservice.exception.RateLimitExceededException;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.ApplicationRepository;
+import com.jobflow.jobservice.repository.CompanyRepository;
 import com.jobflow.jobservice.repository.JobRepository;
 import com.jobflow.jobservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +35,7 @@ public class ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final RateLimiterService rateLimiterService;
 
@@ -55,13 +60,23 @@ public class ApplicationService {
     }
 
     @Transactional
-    public Application updateStatus(Long id, UpdateApplicationStatusDto dto) {
-        if (applicationRepository.findById(id).isEmpty()) throw new ResourceNotFoundException("Application not found");
+    public Application updateStatus(Long id, UpdateApplicationStatusDto dto, Long userId) {
+        Application application = applicationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+        Job job = jobRepository.findById(application.getJobId())
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+        Company company = companyRepository.findById(job.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
+        if(!company.getUserId().equals(userId)) throw new AccessDeniedException("You don't own the job for this application");
         return applicationRepository.updateStatus(id, dto.status());
     }
 
     @Transactional
-    public void deleteApplication(Long id) {
+    public void deleteApplication(Long id, Long userId, String role) {
+        Application application = applicationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+        if(!application.getCandidateId().equals(userId) && !Objects.equals(role, "ADMIN"))
+            throw new AccessDeniedException("You don't own that application");
         applicationRepository.delete(id);
     }
 

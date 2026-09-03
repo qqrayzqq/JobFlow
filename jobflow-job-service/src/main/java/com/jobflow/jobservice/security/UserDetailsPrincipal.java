@@ -1,5 +1,6 @@
 package com.jobflow.jobservice.security;
 
+import com.jobflow.jobservice.domain.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,6 +15,7 @@ public class UserDetailsPrincipal implements UserDetails {
     private final String email;
     private final String password;
     private final String role;
+    private final Long id;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -29,6 +31,10 @@ public class UserDetailsPrincipal implements UserDetails {
     public String getUsername() {
         return email;
     }
+
+    public Long getId(){return id;}
+
+    public String getRole(){return role;}
 
     @Override
     public boolean isEnabled() {
