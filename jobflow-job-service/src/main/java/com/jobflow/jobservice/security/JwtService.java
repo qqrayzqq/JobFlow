@@ -1,5 +1,6 @@
 package com.jobflow.jobservice.security;
 
+import com.jobflow.jobservice.domain.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -18,9 +19,11 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private long expiration;
 
-    public String generateToken(String email){
+    public String generateToken(User user){
         return Jwts.builder()
-                .subject(email)
+                .subject(user.getEmail())
+                .claim("id", user.getId())
+                .claim("role", user.getRole().name())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
@@ -42,8 +45,26 @@ public class JwtService {
                 .getSubject();
     }
 
-    public Boolean isTokenValid(String token, String email){
-        return extractEmail(token).equals(email) && !isTokenExpired(token);
+    public Long extractId(String token){
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("id", Long.class);
+    }
+
+    public String extractRole(String token){
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("role", String.class);
+    }
+
+    public Boolean isTokenValid(String token){
+        return !isTokenExpired(token);
     }
 
     private Boolean isTokenExpired(String token){
