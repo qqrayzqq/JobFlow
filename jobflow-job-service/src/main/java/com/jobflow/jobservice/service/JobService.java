@@ -1,5 +1,6 @@
 package com.jobflow.jobservice.service;
 
+import com.jobflow.jobservice.domain.Company;
 import com.jobflow.jobservice.domain.Job;
 import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.job.CreateJobDto;
@@ -7,6 +8,7 @@ import com.jobflow.jobservice.dto.job.UpdateJobDto;
 import com.jobflow.jobservice.elasticsearch.JobDocument;
 import com.jobflow.jobservice.elasticsearch.JobSearchRepository;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
+import com.jobflow.jobservice.repository.CompanyRepository;
 import com.jobflow.jobservice.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -15,10 +17,12 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -28,6 +32,7 @@ public class JobService {
     private final JobRepository jobRepository;
     private final JobSearchRepository jobSearchRepository;
     private final ElasticsearchOperations operations;
+    private final CompanyRepository companyRepository;
 
     private JobDocument toDocument(Job job) {
         JobDocument doc = new JobDocument();
@@ -55,9 +60,12 @@ public class JobService {
             @CacheEvict(value = "jobs", key = "#id"),
             @CacheEvict(value = "skills", allEntries = true)
     })
-    public Job updateJob(Long id, UpdateJobDto dto) {
+    public Job updateJob(Long id, UpdateJobDto dto, Long userId) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+        Company company = companyRepository.findById(job.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
+        if(!company.getUserId().equals(userId)) throw new AccessDeniedException("You don't own that job");
         job.setCity(dto.city());
         job.setDescription(dto.description());
         job.setSkills(dto.skills());
@@ -72,7 +80,14 @@ public class JobService {
 
     @Transactional
     @CacheEvict(value = "jobs", key = "#id")
-    public void deleteJob(Long id) {
+    public void deleteJob(Long id, Long userId, String role) {
+        Job job = jobRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+        if(!Objects.equals(role, "ADMIN")){
+            Company company = companyRepository.findById(job.getCompanyId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
+            if(!company.getUserId().equals(userId)) throw new AccessDeniedException("You don't own that job");
+        }
         jobRepository.delete(id);
         jobSearchRepository.deleteById(id);
     }

@@ -5,6 +5,7 @@ import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.job.CreateJobDto;
 import com.jobflow.jobservice.dto.job.UpdateJobDto;
 import com.jobflow.jobservice.elasticsearch.JobDocument;
+import com.jobflow.jobservice.security.UserDetailsPrincipal;
 import com.jobflow.jobservice.service.JobService;
 import com.jobflow.jobservice.service.ViewCounterService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -50,8 +52,9 @@ public class JobController {
     })
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('COMPANY')")
-    public ResponseEntity<Job> updateJob(@PathVariable Long id, @Valid @RequestBody UpdateJobDto dto) {
-        return ResponseEntity.ok(jobService.updateJob(id, dto));
+    public ResponseEntity<Job> updateJob(@PathVariable Long id, @Valid @RequestBody UpdateJobDto dto,
+                                         @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        return ResponseEntity.ok(jobService.updateJob(id, dto, authenticatedUser.getId()));
     }
 
     @Operation(summary = "Delete job posting")
@@ -62,8 +65,8 @@ public class JobController {
     })
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('COMPANY') or hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteJob(@PathVariable Long id) {
-        jobService.deleteJob(id);
+    public ResponseEntity<Void> deleteJob(@PathVariable Long id, @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        jobService.deleteJob(id, authenticatedUser.getId(), authenticatedUser.getRole());
         return ResponseEntity.noContent().build();
     }
 

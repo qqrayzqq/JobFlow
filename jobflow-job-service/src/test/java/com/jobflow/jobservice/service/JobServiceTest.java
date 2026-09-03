@@ -1,5 +1,6 @@
 package com.jobflow.jobservice.service;
 
+import com.jobflow.jobservice.domain.Company;
 import com.jobflow.jobservice.domain.Job;
 import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.job.CreateJobDto;
@@ -7,6 +8,7 @@ import com.jobflow.jobservice.dto.job.UpdateJobDto;
 import com.jobflow.jobservice.elasticsearch.JobDocument;
 import com.jobflow.jobservice.elasticsearch.JobSearchRepository;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
+import com.jobflow.jobservice.repository.CompanyRepository;
 import com.jobflow.jobservice.repository.JobRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,12 +36,14 @@ class JobServiceTest {
     private JobSearchRepository jobSearchRepository;
     @Mock
     private ElasticsearchOperations operations;
+    @Mock
+    private CompanyRepository companyRepository;
 
     private JobService jobService;
 
     @BeforeEach
     void setUp() {
-        jobService = new JobService(jobRepository, jobSearchRepository, operations);
+        jobService = new JobService(jobRepository, jobSearchRepository, operations, companyRepository);
     }
 
     @Test
@@ -63,19 +67,21 @@ class JobServiceTest {
 
         UpdateJobDto dto = new UpdateJobDto("Backend Dev", "Praha", "desc", JobStatus.PUBLISHED, 1000, 2000, "Java,Spring");
 
-        assertThatThrownBy(() -> jobService.updateJob(1L, dto)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> jobService.updateJob(1L, dto, 1L)).isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void updateJob_success_updatesAndReindexesDocument() {
         Job existing = new Job();
         existing.setStatus(JobStatus.PUBLISHED);
+        existing.setCompanyId(10L);
         when(jobRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(jobRepository.update(any(Job.class))).thenReturn(existing);
+        when(companyRepository.findById(10L)).thenReturn(Optional.of(new Company("DHL", "Praha", "", 5L)));
 
         UpdateJobDto dto = new UpdateJobDto("Backend Dev", "Praha", "desc", JobStatus.PUBLISHED, 1000, 2000, "Java,Spring");
 
-        Job result = jobService.updateJob(1L, dto);
+        Job result = jobService.updateJob(1L, dto, 5L);
 
         assertThat(result.getTitle()).isEqualTo("Backend Dev");
         verify(jobRepository).update(any(Job.class));
