@@ -6,6 +6,7 @@ import com.jobflow.jobservice.dto.company.UpdateCompanyDto;
 import com.jobflow.jobservice.exception.DuplicateResourceException;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.CompanyRepository;
+import com.jobflow.jobservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,12 +25,14 @@ import static org.mockito.Mockito.when;
 class CompanyServiceTest {
     @Mock
     private CompanyRepository companyRepository;
+    @Mock
+    private UserRepository userRepository;
 
     private CompanyService companyService;
 
     @BeforeEach
     void setUp(){
-        companyService = new CompanyService(companyRepository);
+        companyService = new CompanyService(companyRepository, userRepository);
     }
 
     @Test
@@ -75,11 +78,11 @@ class CompanyServiceTest {
                 "Praha"
         );
 
-        assertThatThrownBy(() -> companyService.updateCompany(2L, dto)).isInstanceOf(DuplicateResourceException.class);
+        assertThatThrownBy(() -> companyService.updateCompany(2L, dto, 2L)).isInstanceOf(DuplicateResourceException.class);
     }
 
     @Test
-    void updateCompany_success_updatesCompany() {
+    void updateCompany_success_updatesCompany() throws Exception {
         Company existing = new Company("DHL", "Praha", "", 2L);
         when(companyRepository.findById(2L)).thenReturn(Optional.of(existing));
         when(companyRepository.update(any(Company.class))).thenReturn(existing);
@@ -90,7 +93,7 @@ class CompanyServiceTest {
                 "Brno"
         );
 
-        Company result = companyService.updateCompany(2L, dto);
+        Company result = companyService.updateCompany(2L, dto, 2L);
 
         assertThat(result).isNotNull();
         verify(companyRepository).update(any(Company.class));
