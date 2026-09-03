@@ -82,7 +82,7 @@ class CompanyServiceTest {
     }
 
     @Test
-    void updateCompany_success_updatesCompany() throws Exception {
+    void updateCompany_success_updatesCompany(){
         Company existing = new Company("DHL", "Praha", "", 2L);
         when(companyRepository.findById(2L)).thenReturn(Optional.of(existing));
         when(companyRepository.update(any(Company.class))).thenReturn(existing);
