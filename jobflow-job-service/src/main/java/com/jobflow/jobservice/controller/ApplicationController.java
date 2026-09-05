@@ -98,7 +98,8 @@ public class ApplicationController {
     })
     @GetMapping("/candidate/{candidateId}")
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<List<Application>> getApplicationsByCandidate(@PathVariable Long candidateId) {
-        return ResponseEntity.ok(applicationService.getApplicationsByCandidate(candidateId));
+    public ResponseEntity<List<Application>> getApplicationsByCandidate(@PathVariable Long candidateId,
+                                                                        @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        return ResponseEntity.ok(applicationService.getApplicationsByCandidate(candidateId, authenticatedUser.getId()));
     }
 }

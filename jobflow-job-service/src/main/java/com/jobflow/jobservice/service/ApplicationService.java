@@ -89,7 +89,8 @@ public class ApplicationService {
         return applicationRepository.findByJobId(jobId);
     }
 
-    public List<Application> getApplicationsByCandidate(Long candidateId) {
+    public List<Application> getApplicationsByCandidate(Long candidateId, Long realCandidateId) {
+        if(!candidateId.equals(realCandidateId)) throw new AccessDeniedException("You can't get these applications");
         return applicationRepository.findByCandidateId(candidateId);
     }
 }
