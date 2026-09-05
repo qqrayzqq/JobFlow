@@ -7,6 +7,7 @@ import com.jobflow.jobservice.dto.job.CreateJobDto;
 import com.jobflow.jobservice.dto.job.UpdateJobDto;
 import com.jobflow.jobservice.elasticsearch.JobDocument;
 import com.jobflow.jobservice.elasticsearch.JobSearchRepository;
+import com.jobflow.jobservice.exception.InvalidStatusTransitionException;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.CompanyRepository;
 import com.jobflow.jobservice.repository.JobRepository;
@@ -123,6 +124,20 @@ class JobServiceTest {
         assertThat(result.getTitle()).isEqualTo("Backend Dev");
         verify(jobRepository).update(any(Job.class));
         verify(jobSearchRepository).save(any(JobDocument.class));
+    }
+
+    @Test
+    void updateJob_invalidStatusTransition_throwsInvalidStatusTransitionException() {
+        Job existing = new Job();
+        existing.setStatus(JobStatus.CLOSED);
+        existing.setCompanyId(10L);
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(companyRepository.findById(10L)).thenReturn(Optional.of(new Company("DHL", "Praha", "", 5L)));
+
+        UpdateJobDto dto = new UpdateJobDto("Backend Dev", "Praha", "desc", JobStatus.DRAFT, 1000, 2000, "Java,Spring");
+
+        assertThatThrownBy(() -> jobService.updateJob(1L, dto, 5L)).isInstanceOf(InvalidStatusTransitionException.class);
+        verify(jobRepository, never()).update(any(Job.class));
     }
 
     @Test
