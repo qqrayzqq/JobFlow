@@ -34,8 +34,9 @@ public class CompanyController {
     })
     @PostMapping
     @PreAuthorize("hasRole('COMPANY')")
-    public ResponseEntity<Company> createCompany(@Valid @RequestBody CreateCompanyDto dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(companyService.createCompany(dto));
+    public ResponseEntity<Company> createCompany(@Valid @RequestBody CreateCompanyDto dto,
+                                                 @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(companyService.createCompany(dto, authenticatedUser.getId()));
     }
 
     @Operation(summary = "Update company")

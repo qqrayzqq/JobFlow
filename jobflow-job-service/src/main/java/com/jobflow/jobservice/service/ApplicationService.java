@@ -40,8 +40,8 @@ public class ApplicationService {
     private final RateLimiterService rateLimiterService;
 
     @Transactional
-    public Application createApplication(CreateApplicationDto dto) {
-        String key = "ratelimit:apply:" + dto.candidateId();
+    public Application createApplication(CreateApplicationDto dto, Long candidateId) {
+        String key = "ratelimit:apply:" + candidateId;
         if (!rateLimiterService.tryAcquire(key, 5, Duration.ofMinutes(1))) {
             throw new RateLimitExceededException("Too many applications, try again later");
         }
@@ -49,11 +49,11 @@ public class ApplicationService {
         Job job = jobRepository.findById(dto.jobId()).orElseThrow(() -> new ResourceNotFoundException("Job not found"));
         if (job.getStatus() != JobStatus.PUBLISHED)
             throw new JobNotPublishedException("Job is not accepting applications");
-        User candidate = userRepository.findById(dto.candidateId()).orElseThrow(() -> new ResourceNotFoundException("Candidate not found"));
-        if (applicationRepository.findByJobIdAndCandidateId(dto.jobId(), dto.candidateId()).isPresent())
+        User candidate = userRepository.findById(candidateId).orElseThrow(() -> new ResourceNotFoundException("Candidate not found"));
+        if (applicationRepository.findByJobIdAndCandidateId(dto.jobId(), candidateId).isPresent())
             throw new DuplicateResourceException("Application already exists");
 
-        Application saved = applicationRepository.save(new Application(dto.jobId(), dto.candidateId()));
+        Application saved = applicationRepository.save(new Application(dto.jobId(), candidateId));
         ApplicationCreatedEvent applicationCreatedEvent = new ApplicationCreatedEvent(saved.getId(), saved.getJobId(), saved.getCandidateId(), candidate.getEmail(), job.getTitle(), Instant.now());
         kafkaTemplate.send(KafkaTopicConfig.APPLICATION_CREATED_TOPIC, applicationCreatedEvent);
         return saved;

@@ -39,8 +39,9 @@ public class JobController {
     })
     @PostMapping
     @PreAuthorize("hasRole('COMPANY')")
-    public ResponseEntity<Job> createJob(@Valid @RequestBody CreateJobDto dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(jobService.createJob(dto));
+    public ResponseEntity<Job> createJob(@Valid @RequestBody CreateJobDto dto,
+                                         @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(jobService.createJob(dto, authenticatedUser.getId()));
     }
 
     @Operation(summary = "Update job posting")

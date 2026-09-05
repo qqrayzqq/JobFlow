@@ -2,6 +2,7 @@ package com.jobflow.jobservice.service;
 
 import com.jobflow.jobservice.domain.Company;
 import com.jobflow.jobservice.domain.Job;
+import com.jobflow.jobservice.domain.User;
 import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.job.CreateJobDto;
 import com.jobflow.jobservice.dto.job.UpdateJobDto;
@@ -10,6 +11,7 @@ import com.jobflow.jobservice.elasticsearch.JobSearchRepository;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.CompanyRepository;
 import com.jobflow.jobservice.repository.JobRepository;
+import com.jobflow.jobservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -49,7 +51,9 @@ public class JobService {
 
     @Transactional
     @CacheEvict(value = "skills", allEntries = true)
-    public Job createJob(CreateJobDto dto) {
+    public Job createJob(CreateJobDto dto, Long userId) {
+        Company company = companyRepository.findById(dto.companyId()).orElseThrow(() -> new ResourceNotFoundException("Company not found"));
+        if(!company.getUserId().equals(userId)) throw new AccessDeniedException("You can't create that job");
         Job job = jobRepository.save(new Job(dto.title(), dto.city(), dto.description(), dto.companyId(), dto.salaryMax(), dto.salaryMin(), dto.skills(), dto.status()));
         jobSearchRepository.save(toDocument(job));
         return job;

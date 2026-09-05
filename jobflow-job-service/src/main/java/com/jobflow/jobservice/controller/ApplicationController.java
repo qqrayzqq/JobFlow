@@ -1,6 +1,7 @@
 package com.jobflow.jobservice.controller;
 
 import com.jobflow.jobservice.domain.Application;
+import com.jobflow.jobservice.domain.enums.UserRole;
 import com.jobflow.jobservice.dto.application.CreateApplicationDto;
 import com.jobflow.jobservice.dto.application.UpdateApplicationStatusDto;
 import com.jobflow.jobservice.security.UserDetailsPrincipal;
@@ -35,8 +36,9 @@ public class ApplicationController {
     })
     @PostMapping
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<Application> createApplication(@Valid @RequestBody CreateApplicationDto dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(applicationService.createApplication(dto));
+    public ResponseEntity<Application> createApplication(@Valid @RequestBody CreateApplicationDto dto,
+                                                         @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(applicationService.createApplication(dto, authenticatedUser.getId()));
     }
 
     @Operation(summary = "Update application status")
