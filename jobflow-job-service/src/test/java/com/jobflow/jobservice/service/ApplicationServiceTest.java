@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
+import com.jobflow.jobservice.exception.InvalidStatusTransitionException;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.time.Duration;
@@ -148,6 +149,23 @@ class ApplicationServiceTest {
         Application result = applicationService.updateStatus(1L, dto, 5L);
 
         assertThat(result.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
+    }
+
+    @Test
+    void updateStatus_invalidTransition_throwsInvalidStatusTransitionException() {
+        Application existing = new Application(1L, 1L);
+        existing.setStatus(ApplicationStatus.ACCEPTED);
+        when(applicationRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        Job job = new Job();
+        job.setCompanyId(10L);
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(companyRepository.findById(10L)).thenReturn(Optional.of(new Company("DHL", "Praha", "", 5L)));
+
+        UpdateApplicationStatusDto dto = new UpdateApplicationStatusDto(ApplicationStatus.PENDING);
+
+        assertThatThrownBy(() -> applicationService.updateStatus(1L, dto, 5L)).isInstanceOf(InvalidStatusTransitionException.class);
+        verify(applicationRepository, never()).updateStatus(any(), any());
     }
 
     @Test
