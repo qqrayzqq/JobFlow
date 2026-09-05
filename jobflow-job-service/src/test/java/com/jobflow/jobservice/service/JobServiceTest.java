@@ -48,6 +48,20 @@ class JobServiceTest {
         jobService = new JobService(jobRepository, jobSearchRepository, operations, companyRepository);
     }
 
+    private Job publishedJob() {
+        Job job = new Job();
+        job.setStatus(JobStatus.PUBLISHED);
+        job.setCompanyId(10L);
+        return job;
+    }
+
+    private Job draftJob() {
+        Job job = new Job();
+        job.setStatus(JobStatus.DRAFT);
+        job.setCompanyId(10L);
+        return job;
+    }
+
     @Test
     void createJob_companyNotFound_throwsResourceNotFoundException() {
         when(companyRepository.findById(1L)).thenReturn(Optional.empty());
@@ -115,7 +129,80 @@ class JobServiceTest {
     void getJobById_notFound_throwsResourceNotFoundException() {
         when(jobRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> jobService.getJobById(1L)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> jobService.getJobById(1L, 5L)).isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void getJobById_published_anyoneCanSee() {
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(publishedJob()));
+
+        Job result = jobService.getJobById(1L, null);
+
+        assertThat(result.getStatus()).isEqualTo(JobStatus.PUBLISHED);
+    }
+
+    @Test
+    void getJobById_draftAnonymous_throwsAccessDeniedException() {
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(draftJob()));
+        when(companyRepository.findById(10L)).thenReturn(Optional.of(new Company("DHL", "Praha", "", 5L)));
+
+        assertThatThrownBy(() -> jobService.getJobById(1L, null)).isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void getJobById_draftNotOwner_throwsAccessDeniedException() {
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(draftJob()));
+        when(companyRepository.findById(10L)).thenReturn(Optional.of(new Company("DHL", "Praha", "", 5L)));
+
+        assertThatThrownBy(() -> jobService.getJobById(1L, 7L)).isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void getJobById_draftOwner_returnsJob() {
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(draftJob()));
+        when(companyRepository.findById(10L)).thenReturn(Optional.of(new Company("DHL", "Praha", "", 5L)));
+
+        Job result = jobService.getJobById(1L, 5L);
+
+        assertThat(result.getStatus()).isEqualTo(JobStatus.DRAFT);
+    }
+
+    @Test
+    void getJobsByCompany_owner_returnsAllStatuses() {
+        when(companyRepository.findById(10L)).thenReturn(Optional.of(new Company("DHL", "Praha", "", 5L)));
+        when(jobRepository.findAllByCompanyId(10L)).thenReturn(List.of(draftJob(), publishedJob()));
+
+        List<Job> result = jobService.getJobsByCompany(10L, 5L);
+
+        assertThat(result).hasSize(2);
+        verify(jobRepository, never()).findByCompanyId(any());
+    }
+
+    @Test
+    void getJobsByCompany_notOwner_excludesDrafts() {
+        when(companyRepository.findById(10L)).thenReturn(Optional.of(new Company("DHL", "Praha", "", 5L)));
+        when(jobRepository.findByCompanyId(10L)).thenReturn(List.of(publishedJob()));
+
+        List<Job> result = jobService.getJobsByCompany(10L, 7L);
+
+        assertThat(result).hasSize(1);
+        verify(jobRepository, never()).findAllByCompanyId(any());
+    }
+
+    @Test
+    void getJobsByCompany_anonymous_excludesDrafts() {
+        when(jobRepository.findByCompanyId(10L)).thenReturn(List.of(publishedJob()));
+
+        List<Job> result = jobService.getJobsByCompany(10L, null);
+
+        assertThat(result).hasSize(1);
+        verify(companyRepository, never()).findById(any());
+    }
+
+    @Test
+    void getJobsByStatus_draft_throwsAccessDeniedException() {
+        assertThatThrownBy(() -> jobService.getJobsByStatus(JobStatus.DRAFT)).isInstanceOf(AccessDeniedException.class);
+        verify(jobRepository, never()).findByStatus(any());
     }
 
     @Test
