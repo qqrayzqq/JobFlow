@@ -1,6 +1,7 @@
 package com.jobflow.jobservice.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.exception.IntegrityConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -31,6 +32,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<?> handleDuplicate(DuplicateResourceException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(IntegrityConstraintViolationException.class)
+    public ResponseEntity<?> handleIntegrityConstraintViolation(IntegrityConstraintViolationException ex) {
+        log.debug("Integrity constraint violated: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("Resource already exists");
     }
 
     @ExceptionHandler(JobNotPublishedException.class)

@@ -13,3 +13,5 @@ databaseChangeLog:
       file: classpath:/db/changelog/006-alter-jobs-skills.sql
   - include:
       file: classpath:/db/changelog/007-alter-jobs-views.sql
+  - include:
+      file: classpath:/db/changelog/008-add-unique-constraints.sql
