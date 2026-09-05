@@ -83,7 +83,7 @@ class JobControllerTest {
         Job job = new Job();
         job.setId(1L);
         job.setTitle("Backend Dev");
-        when(jobService.getJobById(1L)).thenReturn(job);
+        when(jobService.getJobById(any(), any())).thenReturn(job);
 
         mockMvc.perform(get("/api/jobs/1"))
                 .andExpect(status().isOk())
@@ -93,7 +93,7 @@ class JobControllerTest {
 
     @Test
     void getJobById_notFound_returns404() throws Exception {
-        when(jobService.getJobById(1L)).thenThrow(new ResourceNotFoundException("Job not found"));
+        when(jobService.getJobById(any(), any())).thenThrow(new ResourceNotFoundException("Job not found"));
 
         mockMvc.perform(get("/api/jobs/1"))
                 .andExpect(status().isNotFound());

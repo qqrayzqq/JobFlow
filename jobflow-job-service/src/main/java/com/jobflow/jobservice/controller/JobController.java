@@ -77,16 +77,20 @@ public class JobController {
             @ApiResponse(responseCode = "404", description = "Job not found")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Job> getJobById(@PathVariable Long id) {
+    public ResponseEntity<Job> getJobById(@PathVariable Long id, @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        Long userId = authenticatedUser != null ? authenticatedUser.getId() : null;
+        Job job = jobService.getJobById(id, userId);
         viewCounterService.increment(id);
-        return ResponseEntity.ok(jobService.getJobById(id));
+        return ResponseEntity.ok(job);
     }
 
     @Operation(summary = "Get jobs by company")
     @ApiResponse(responseCode = "200", description = "List of jobs")
     @GetMapping("/company/{companyId}")
-    public ResponseEntity<List<Job>> getJobsByCompany(@PathVariable Long companyId) {
-        return ResponseEntity.ok(jobService.getJobsByCompany(companyId));
+    public ResponseEntity<List<Job>> getJobsByCompany(@PathVariable Long companyId,
+                                                       @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        Long userId = authenticatedUser != null ? authenticatedUser.getId() : null;
+        return ResponseEntity.ok(jobService.getJobsByCompany(companyId, userId));
     }
 
     @Operation(summary = "Get jobs by status")

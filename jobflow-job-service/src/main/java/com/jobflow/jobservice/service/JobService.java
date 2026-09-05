@@ -2,7 +2,6 @@ package com.jobflow.jobservice.service;
 
 import com.jobflow.jobservice.domain.Company;
 import com.jobflow.jobservice.domain.Job;
-import com.jobflow.jobservice.domain.User;
 import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.job.CreateJobDto;
 import com.jobflow.jobservice.dto.job.UpdateJobDto;
@@ -11,7 +10,6 @@ import com.jobflow.jobservice.elasticsearch.JobSearchRepository;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.CompanyRepository;
 import com.jobflow.jobservice.repository.JobRepository;
-import com.jobflow.jobservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -97,16 +95,24 @@ public class JobService {
     }
 
     @Cacheable(value = "jobs", key = "#id", unless = "#result.status.name() != 'PUBLISHED'")
-    public Job getJobById(Long id) {
-        return jobRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+    public Job getJobById(Long id, Long userId) {
+        Job job = jobRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+        if(job.getStatus().equals(JobStatus.DRAFT)){
+            Company company = companyRepository.findById(job.getCompanyId()).orElseThrow(() -> new ResourceNotFoundException("Company not found"));
+            if(userId == null || !company.getUserId().equals(userId)) throw new AccessDeniedException("You don't have access to this job");
+        }
+        return job;
     }
 
-    public List<Job> getJobsByCompany(Long companyId) {
-        return jobRepository.findByCompanyId(companyId);
+    public List<Job> getJobsByCompany(Long companyId, Long userId) {
+        boolean isOwner = userId != null && companyRepository.findById(companyId)
+                .map(company -> company.getUserId().equals(userId))
+                .orElse(false);
+        return isOwner ? jobRepository.findAllByCompanyId(companyId) : jobRepository.findByCompanyId(companyId);
     }
 
     public List<Job> getJobsByStatus(JobStatus status) {
+        if(status == JobStatus.DRAFT) throw new AccessDeniedException("Can't list draft jobs");
         return jobRepository.findByStatus(status);
     }
 
@@ -124,6 +130,10 @@ public class JobService {
     }
 
     public List<JobDocument> searchJobs(String text, String city, String status, Integer minSalary, Integer maxSalary){
+        if (status != null && status.equalsIgnoreCase(JobStatus.DRAFT.name())) {
+            throw new AccessDeniedException("Can't search draft jobs");
+        }
+
         NativeQuery query = NativeQuery.builder()
                 .withQuery(q->q.bool(b->{
                     if(text != null && !text.isBlank()){
@@ -144,6 +154,7 @@ public class JobService {
                     if (maxSalary != null) {
                         b.filter(f -> f.range(r -> r.number(n -> n.field("salaryMax").lte(maxSalary.doubleValue()))));
                     }
+                    b.mustNot(mn -> mn.term(t -> t.field("status").value(JobStatus.DRAFT.name())));
                     return b;
                 }))
                 .build();

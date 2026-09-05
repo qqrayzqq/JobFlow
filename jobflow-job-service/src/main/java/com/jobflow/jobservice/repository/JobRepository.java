@@ -58,6 +58,13 @@ public class JobRepository {
     public List<Job> findByCompanyId(Long companyId) {
         return dsl.selectFrom(Tables.JOBS)
                 .where(Tables.JOBS.COMPANY_ID.eq(companyId))
+                .and(Tables.JOBS.STATUS.ne(JobStatus.DRAFT.name()))
+                .fetchInto(Job.class);
+    }
+
+    public List<Job> findAllByCompanyId(Long companyId) {
+        return dsl.selectFrom(Tables.JOBS)
+                .where(Tables.JOBS.COMPANY_ID.eq(companyId))
                 .fetchInto(Job.class);
     }
 
@@ -70,12 +77,14 @@ public class JobRepository {
     public List<Job> findBySalaryRange(Integer min, Integer max) {
         return dsl.selectFrom(Tables.JOBS)
                 .where(Tables.JOBS.SALARY_MIN.ge(min)).and(Tables.JOBS.SALARY_MAX.le(max))
+                .and(Tables.JOBS.STATUS.ne(JobStatus.DRAFT.name()))
                 .fetchInto(Job.class);
     }
 
     public List<Job> findByCity(String city) {
         return dsl.selectFrom(Tables.JOBS)
                 .where(Tables.JOBS.CITY.eq(city))
+                .and(Tables.JOBS.STATUS.ne(JobStatus.DRAFT.name()))
                 .fetchInto(Job.class);
     }
 
@@ -89,6 +98,7 @@ public class JobRepository {
     public Set<String> findAllSkills(){
         List<String> rows = dsl.select(Tables.JOBS.SKILLS)
                 .from(Tables.JOBS)
+                .where(Tables.JOBS.STATUS.ne(JobStatus.DRAFT.name()))
                 .fetch(Tables.JOBS.SKILLS);
         return rows.stream()
                 .filter(Objects::nonNull)
