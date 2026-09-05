@@ -24,8 +24,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -153,5 +155,20 @@ class ApplicationServiceTest {
         when(applicationRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> applicationService.getApplicationById(1L)).isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void getApplicationsByCandidate_notOwnCandidate_throwsAccessDeniedException() {
+        assertThatThrownBy(() -> applicationService.getApplicationsByCandidate(1L, 5L)).isInstanceOf(AccessDeniedException.class);
+        verify(applicationRepository, never()).findByCandidateId(any());
+    }
+
+    @Test
+    void getApplicationsByCandidate_ownCandidate_returnsApplications() {
+        when(applicationRepository.findByCandidateId(5L)).thenReturn(List.of(new Application(1L, 5L)));
+
+        List<Application> result = applicationService.getApplicationsByCandidate(5L, 5L);
+
+        assertThat(result).hasSize(1);
     }
 }
