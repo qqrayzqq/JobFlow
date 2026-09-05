@@ -12,12 +12,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,43 +41,77 @@ class SubscriptionServiceTest {
 
     @Test
     void createSubscription_userNotFound_throwsResourceNotFoundException() {
-        CreateSubscriptionDto dto = new CreateSubscriptionDto(
-          1L,
-          "Java"
-        );
+        Long userId = 1L;
+        CreateSubscriptionDto dto = new CreateSubscriptionDto("Java");
 
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> subscriptionService.createSubscription(dto)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> subscriptionService.createSubscription(dto, userId)).isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void createSubscription_duplicateSkill_throwsDuplicateResourceException() {
-        CreateSubscriptionDto dto = new CreateSubscriptionDto(
-                1L,
-                "Java"
-        );
+        Long userId = 1L;
+        CreateSubscriptionDto dto = new CreateSubscriptionDto("Java");
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
-        when(subscriptionRepository.findByUserIdAndSkill(dto.userId(), dto.skill())).thenReturn(Optional.of(new Subscription()));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+        when(subscriptionRepository.findByUserIdAndSkill(userId, dto.skill())).thenReturn(Optional.of(new Subscription()));
 
-        assertThatThrownBy(() -> subscriptionService.createSubscription(dto)).isInstanceOf(DuplicateResourceException.class);
+        assertThatThrownBy(() -> subscriptionService.createSubscription(dto, userId)).isInstanceOf(DuplicateResourceException.class);
     }
 
     @Test
     void createSubscription_success_savesSubscription() {
-        CreateSubscriptionDto dto = new CreateSubscriptionDto(
-                1L,
-                "Java"
-        );
+        Long userId = 1L;
+        CreateSubscriptionDto dto = new CreateSubscriptionDto("Java");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
-        when(subscriptionRepository.findByUserIdAndSkill(dto.userId(), dto.skill())).thenReturn(Optional.empty());
+        when(subscriptionRepository.findByUserIdAndSkill(userId, dto.skill())).thenReturn(Optional.empty());
         when(subscriptionRepository.save(any(Subscription.class))).thenReturn(new Subscription());
 
-        Subscription result = subscriptionService.createSubscription(dto);
+        Subscription result = subscriptionService.createSubscription(dto, userId);
 
         assertThat(result).isNotNull();
         verify(subscriptionRepository).save(any(Subscription.class));
+    }
+
+    @Test
+    void deleteSubscription_notFound_throwsResourceNotFoundException() {
+        when(subscriptionRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> subscriptionService.deleteSubscription(1L, 5L)).isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void deleteSubscription_notOwner_throwsAccessDeniedException() {
+        when(subscriptionRepository.findById(1L)).thenReturn(Optional.of(new Subscription(10L, "Java")));
+
+        assertThatThrownBy(() -> subscriptionService.deleteSubscription(1L, 5L)).isInstanceOf(AccessDeniedException.class);
+        verify(subscriptionRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteSubscription_success_deletesSubscription() {
+        Long userId = 5L;
+        when(subscriptionRepository.findById(1L)).thenReturn(Optional.of(new Subscription(userId, "Java")));
+
+        subscriptionService.deleteSubscription(1L, userId);
+
+        verify(subscriptionRepository).delete(1L);
+    }
+
+    @Test
+    void getSubscriptionsByUser_notOwnUser_throwsAccessDeniedException() {
+        assertThatThrownBy(() -> subscriptionService.getSubscriptionsByUser(1L, 5L)).isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void getSubscriptionsByUser_success_returnsSubscriptions() {
+        Long userId = 5L;
+        when(subscriptionRepository.findByUserId(userId)).thenReturn(List.of(new Subscription(userId, "Java")));
+
+        List<Subscription> result = subscriptionService.getSubscriptionsByUser(userId, userId);
+
+        assertThat(result).hasSize(1);
     }
 }

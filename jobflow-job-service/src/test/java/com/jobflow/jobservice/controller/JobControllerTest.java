@@ -104,7 +104,7 @@ class JobControllerTest {
         Job saved = new Job();
         saved.setId(1L);
         saved.setTitle("Backend Dev");
-        when(jobService.createJob(any())).thenReturn(saved);
+        when(jobService.createJob(any(), any())).thenReturn(saved);
 
         String body = """
                 {

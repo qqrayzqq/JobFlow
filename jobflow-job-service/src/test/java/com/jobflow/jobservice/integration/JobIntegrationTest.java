@@ -49,7 +49,7 @@ class JobIntegrationTest extends AbstractIntegrationTest {
     }
 
     private long createCompany(String token) throws Exception {
-        CreateCompanyDto company = new CreateCompanyDto("Acme", "IT company", "Praha", 1L);
+        CreateCompanyDto company = new CreateCompanyDto("Acme", "IT company", "Praha");
 
         MvcResult result = mockMvc.perform(post("/api/companies")
                         .header("Authorization", "Bearer " + token)

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,14 +49,35 @@ class JobServiceTest {
     }
 
     @Test
+    void createJob_companyNotFound_throwsResourceNotFoundException() {
+        when(companyRepository.findById(1L)).thenReturn(Optional.empty());
+
+        CreateJobDto dto = new CreateJobDto("Backend Dev", "desc", 1000, 2000, "Praha", "Java,Spring", JobStatus.PUBLISHED, 1L);
+
+        assertThatThrownBy(() -> jobService.createJob(dto, 5L)).isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void createJob_notOwner_throwsAccessDeniedException() {
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(new Company("DHL", "Praha", "", 10L)));
+
+        CreateJobDto dto = new CreateJobDto("Backend Dev", "desc", 1000, 2000, "Praha", "Java,Spring", JobStatus.PUBLISHED, 1L);
+
+        assertThatThrownBy(() -> jobService.createJob(dto, 5L)).isInstanceOf(AccessDeniedException.class);
+        verify(jobRepository, never()).save(any(Job.class));
+    }
+
+    @Test
     void createJob_success_savesAndIndexes() {
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(new Company("DHL", "Praha", "", 5L)));
+
         Job saved = new Job();
         saved.setStatus(JobStatus.PUBLISHED);
         when(jobRepository.save(any(Job.class))).thenReturn(saved);
 
         CreateJobDto dto = new CreateJobDto("Backend Dev", "desc", 1000, 2000, "Praha", "Java,Spring", JobStatus.PUBLISHED, 1L);
 
-        Job result = jobService.createJob(dto);
+        Job result = jobService.createJob(dto, 5L);
 
         assertThat(result).isNotNull();
         verify(jobRepository).save(any(Job.class));
