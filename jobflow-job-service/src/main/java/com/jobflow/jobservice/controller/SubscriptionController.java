@@ -2,6 +2,7 @@ package com.jobflow.jobservice.controller;
 
 import com.jobflow.jobservice.domain.Subscription;
 import com.jobflow.jobservice.dto.subscription.CreateSubscriptionDto;
+import com.jobflow.jobservice.security.UserDetailsPrincipal;
 import com.jobflow.jobservice.service.SubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,8 +34,9 @@ public class SubscriptionController {
     })
     @PostMapping
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<Subscription> createSubscription(@Valid @RequestBody CreateSubscriptionDto dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(subscriptionService.createSubscription(dto));
+    public ResponseEntity<Subscription> createSubscription(@Valid @RequestBody CreateSubscriptionDto dto,
+                                                           @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(subscriptionService.createSubscription(dto, authenticatedUser.getId()));
     }
 
     @Operation(summary = "Delete subscription")
@@ -44,8 +47,8 @@ public class SubscriptionController {
     })
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<Void> deleteSubscription(@PathVariable Long id) {
-        subscriptionService.deleteSubscription(id);
+    public ResponseEntity<Void> deleteSubscription(@PathVariable Long id, @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        subscriptionService.deleteSubscription(id, authenticatedUser.getId());
         return ResponseEntity.noContent().build();
     }
 
@@ -56,7 +59,8 @@ public class SubscriptionController {
     })
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<List<Subscription>> getSubscriptionsByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(subscriptionService.getSubscriptionsByUser(userId));
+    public ResponseEntity<List<Subscription>> getSubscriptionsByUser(@PathVariable Long userId,
+                                                                     @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        return ResponseEntity.ok(subscriptionService.getSubscriptionsByUser(userId, authenticatedUser.getId()));
     }
 }
