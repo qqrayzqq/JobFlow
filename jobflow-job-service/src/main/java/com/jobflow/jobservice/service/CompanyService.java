@@ -27,9 +27,9 @@ public class CompanyService {
     private final UserRepository userRepository;
 
     @Transactional
-    public Company createCompany(CreateCompanyDto dto) {
+    public Company createCompany(CreateCompanyDto dto, Long userId) {
         if (companyRepository.findByName(dto.name()).isPresent()) throw new DuplicateResourceException("Company with this name already exists");
-        return companyRepository.save(new Company(dto.name(), dto.city(), dto.description(), dto.userId()));
+        return companyRepository.save(new Company(dto.name(), dto.city(), dto.description(), userId));
     }
 
     @Transactional

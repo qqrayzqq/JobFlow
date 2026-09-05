@@ -32,8 +32,8 @@ public class AuthService {
         if (userRepository.findByEmail(dto.email()).isPresent()) throw new DuplicateResourceException("Email already taken");
 
         User user = new User(dto.email(), dto.name(), passwordEncoder.encode(dto.password()), dto.role());
-        userRepository.save(user);
-        return new AuthResponse(jwtService.generateToken(user));
+        User savedUser = userRepository.save(user);
+        return new AuthResponse(jwtService.generateToken(savedUser));
     }
 
     public AuthResponse login(LoginRequest dto) {

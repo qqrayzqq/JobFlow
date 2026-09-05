@@ -37,31 +37,29 @@ class CompanyServiceTest {
 
     @Test
     void createCompany_duplicateName_throwsDuplicateResourceException() {
+        Long userId = 2L;
         when(companyRepository.findByName("DHL")).thenReturn(Optional.of(new Company()));
 
         CreateCompanyDto dto = new CreateCompanyDto(
                 "DHL",
                 "",
-                "Praha",
-                2L
-        );
+                "Praha");
 
-        assertThatThrownBy(() -> companyService.createCompany(dto)).isInstanceOf(DuplicateResourceException.class);
+        assertThatThrownBy(() -> companyService.createCompany(dto, userId)).isInstanceOf(DuplicateResourceException.class);
     }
 
     @Test
     void createCompany_success_savesCompany() {
+        Long userId = 2L;
         when(companyRepository.findByName("DHL")).thenReturn(Optional.empty());
         when(companyRepository.save(any(Company.class))).thenReturn(new Company());
 
         CreateCompanyDto dto = new CreateCompanyDto(
                 "DHL",
                 "",
-                "Praha",
-                2L
-        );
+                "Praha");
 
-        Company result = companyService.createCompany(dto);
+        Company result = companyService.createCompany(dto, userId);
 
         assertThat(result).isNotNull();
         verify(companyRepository).save(any(Company.class));

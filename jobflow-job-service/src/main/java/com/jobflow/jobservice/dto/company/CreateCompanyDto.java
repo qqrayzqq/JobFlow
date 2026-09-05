@@ -12,8 +12,6 @@ public record CreateCompanyDto(
         String description,
         @NotBlank
         @Size(min= 2, max = 255)
-        String city,
-        @NotNull
-        Long userId
+        String city
 ) {
 }

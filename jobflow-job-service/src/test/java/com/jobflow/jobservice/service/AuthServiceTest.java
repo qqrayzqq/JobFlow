@@ -79,6 +79,7 @@ class AuthServiceTest {
         );
 
         when(userRepository.findByEmail(dto.email())).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenReturn(new User(dto.email(), dto.name(), "hashed", dto.role()));
         when(jwtService.generateToken(any(User.class))).thenReturn("token");
 
         AuthResponse response = authService.register(dto);
