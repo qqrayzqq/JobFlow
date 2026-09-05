@@ -7,6 +7,7 @@ import com.jobflow.jobservice.dto.job.CreateJobDto;
 import com.jobflow.jobservice.dto.job.UpdateJobDto;
 import com.jobflow.jobservice.elasticsearch.JobDocument;
 import com.jobflow.jobservice.elasticsearch.JobSearchRepository;
+import com.jobflow.jobservice.exception.InvalidStatusTransitionException;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.CompanyRepository;
 import com.jobflow.jobservice.repository.JobRepository;
@@ -68,6 +69,9 @@ public class JobService {
         Company company = companyRepository.findById(job.getCompanyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
         if(!company.getUserId().equals(userId)) throw new AccessDeniedException("You don't own that job");
+        JobStatus currStatus = job.getStatus();
+        if(!currStatus.equals(dto.status()) && !currStatus.canTransitionTo(dto.status()))
+            throw new InvalidStatusTransitionException("Cannot change job status from " + currStatus + " to " + dto.status());
         job.setCity(dto.city());
         job.setDescription(dto.description());
         job.setSkills(dto.skills());

@@ -5,11 +5,13 @@ import com.jobflow.jobservice.domain.Application;
 import com.jobflow.jobservice.domain.Company;
 import com.jobflow.jobservice.domain.Job;
 import com.jobflow.jobservice.domain.User;
+import com.jobflow.jobservice.domain.enums.ApplicationStatus;
 import com.jobflow.jobservice.domain.enums.JobStatus;
 import com.jobflow.jobservice.dto.application.CreateApplicationDto;
 import com.jobflow.jobservice.dto.application.UpdateApplicationStatusDto;
 import com.jobflow.jobservice.event.ApplicationCreatedEvent;
 import com.jobflow.jobservice.exception.DuplicateResourceException;
+import com.jobflow.jobservice.exception.InvalidStatusTransitionException;
 import com.jobflow.jobservice.exception.JobNotPublishedException;
 import com.jobflow.jobservice.exception.RateLimitExceededException;
 import com.jobflow.jobservice.exception.ResourceNotFoundException;
@@ -68,6 +70,9 @@ public class ApplicationService {
         Company company = companyRepository.findById(job.getCompanyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
         if(!company.getUserId().equals(userId)) throw new AccessDeniedException("You don't own the job for this application");
+        ApplicationStatus currStatus = application.getStatus();
+        if(!currStatus.canTransitionTo(dto.status()))
+            throw new InvalidStatusTransitionException("Cannot change application status from " + currStatus + " to " + dto.status());
         return applicationRepository.updateStatus(id, dto.status());
     }
 
