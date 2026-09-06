@@ -70,7 +70,7 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void login_wrongPassword_returns400() throws Exception {
+    void login_wrongPassword_returns401() throws Exception {
         RegisterRequest dtoRegister = new RegisterRequest(
                 "test",
                 "test@gmail.com",
@@ -91,6 +91,20 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dtoLogin)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void login_unknownEmail_returns401WithSameMessageAsWrongPassword() throws Exception {
+        LoginRequest dtoLogin = new LoginRequest(
+                "doesnotexist@gmail.com",
+                "somepass"
+        );
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dtoLogin)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$").value("Wrong email or password"));
     }
 }
