@@ -6,6 +6,7 @@ import com.jobflow.jobservice.dto.auth.AuthResponse;
 import com.jobflow.jobservice.dto.auth.LoginRequest;
 import com.jobflow.jobservice.dto.auth.RegisterRequest;
 import com.jobflow.jobservice.exception.DuplicateResourceException;
+import com.jobflow.jobservice.exception.InvalidCredentialsException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -102,7 +103,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_wrongPassword_throwsIllegalArgumentException() {
+    void login_wrongPassword_throwsInvalidCredentialsException() {
         when(rateLimiterService.tryAcquire("ratelimit:login:test@gmail.com", 5, Duration.ofMinutes(15))).thenReturn(true);
 
         LoginRequest dto = new LoginRequest(
@@ -113,7 +114,23 @@ class AuthServiceTest {
         when(userRepository.findByEmail(dto.email())).thenReturn(Optional.of(new User("test@gmail.com", "tester", "hashed", UserRole.CANDIDATE)));
         when(passwordEncoder.matches("testpass", "hashed")).thenReturn(false);
 
-        assertThatThrownBy(() -> authService.login(dto)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> authService.login(dto)).isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void login_userNotFound_throwsInvalidCredentialsExceptionAndMitigatesTiming() {
+        when(rateLimiterService.tryAcquire("ratelimit:login:test@gmail.com", 5, Duration.ofMinutes(15))).thenReturn(true);
+
+        LoginRequest dto = new LoginRequest(
+                "test@gmail.com",
+                "testpass"
+        );
+
+        when(userRepository.findByEmail(dto.email())).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(anyString())).thenReturn("dummy-hash");
+
+        assertThatThrownBy(() -> authService.login(dto)).isInstanceOf(InvalidCredentialsException.class);
+        verify(passwordEncoder).matches(dto.password(), "dummy-hash");
     }
 
     @Test

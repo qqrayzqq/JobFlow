@@ -20,6 +20,7 @@ import com.jobflow.jobservice.repository.CompanyRepository;
 import com.jobflow.jobservice.repository.JobRepository;
 import com.jobflow.jobservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ApplicationService {
@@ -57,7 +59,12 @@ public class ApplicationService {
 
         Application saved = applicationRepository.save(new Application(dto.jobId(), candidateId));
         ApplicationCreatedEvent applicationCreatedEvent = new ApplicationCreatedEvent(saved.getId(), saved.getJobId(), saved.getCandidateId(), candidate.getEmail(), job.getTitle(), Instant.now());
-        kafkaTemplate.send(KafkaTopicConfig.APPLICATION_CREATED_TOPIC, applicationCreatedEvent);
+        kafkaTemplate.send(KafkaTopicConfig.APPLICATION_CREATED_TOPIC, applicationCreatedEvent)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Failed to send ApplicationCreatedEvent for application {}", saved.getId(), ex);
+                    }
+                });
         return saved;
     }
 

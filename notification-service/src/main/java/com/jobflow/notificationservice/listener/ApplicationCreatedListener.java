@@ -25,7 +25,7 @@ public class ApplicationCreatedListener {
             emailService.sendApplicationConfirmation(event.candidateEmail(), event.jobTitle());
         }catch (Exception e){
             idempotencyService.release(event.applicationId());
-            throw e;
+            log.error("Failed to send confirmation email for application {}", event.applicationId(), e);
         }
     }
 }
