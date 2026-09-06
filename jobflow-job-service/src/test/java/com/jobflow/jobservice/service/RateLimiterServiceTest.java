@@ -29,35 +29,46 @@ class RateLimiterServiceTest {
     }
 
     @Test
-    void tryAcquire_firstRequest_setsTtlAndReturnsTrue() {
+    void tryAcquire_firstRequestInWindow_returnsTrueWithoutIncrementing() {
         when(template.opsForValue()).thenReturn(valueOps);
-        when(valueOps.increment("login:vlad")).thenReturn(1L);
+        when(valueOps.setIfAbsent("login:vlad", "1", Duration.ofMinutes(15))).thenReturn(true);
 
         boolean allowed = rateLimiterService.tryAcquire("login:vlad", 5, Duration.ofMinutes(15));
 
         assertThat(allowed).isTrue();
-        verify(template).expire("login:vlad", Duration.ofMinutes(15));
+        verify(valueOps, never()).increment(anyString());
+    }
+
+    @Test
+    void tryAcquire_withinLimit_returnsTrue() {
+        when(template.opsForValue()).thenReturn(valueOps);
+        when(valueOps.setIfAbsent("login:vlad", "1", Duration.ofMinutes(15))).thenReturn(false);
+        when(valueOps.increment("login:vlad")).thenReturn(3L);
+
+        boolean allowed = rateLimiterService.tryAcquire("login:vlad", 5, Duration.ofMinutes(15));
+
+        assertThat(allowed).isTrue();
     }
 
     @Test
     void tryAcquire_overLimit_returnsFalse() {
         when(template.opsForValue()).thenReturn(valueOps);
+        when(valueOps.setIfAbsent("login:vlad", "1", Duration.ofMinutes(15))).thenReturn(false);
         when(valueOps.increment("login:vlad")).thenReturn(6L);
 
         boolean allowed = rateLimiterService.tryAcquire("login:vlad", 5, Duration.ofMinutes(15));
 
         assertThat(allowed).isFalse();
-        verify(template, never()).expire(anyString(), any(Duration.class));
     }
 
     @Test
-    void tryAcquire_redisDown_returnsTrue() {
+    void tryAcquire_incrementReturnsNull_returnsTrue() {
         when(template.opsForValue()).thenReturn(valueOps);
+        when(valueOps.setIfAbsent("login:vlad", "1", Duration.ofMinutes(15))).thenReturn(false);
         when(valueOps.increment("login:vlad")).thenReturn(null);
 
         boolean allowed = rateLimiterService.tryAcquire("login:vlad", 5, Duration.ofMinutes(15));
 
         assertThat(allowed).isTrue();
-        verify(template, never()).expire(anyString(), any(Duration.class));
     }
 }
