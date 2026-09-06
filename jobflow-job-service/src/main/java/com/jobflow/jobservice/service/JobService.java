@@ -12,6 +12,7 @@ import com.jobflow.jobservice.exception.ResourceNotFoundException;
 import com.jobflow.jobservice.repository.CompanyRepository;
 import com.jobflow.jobservice.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -27,6 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class JobService {
@@ -54,7 +56,11 @@ public class JobService {
         Company company = companyRepository.findById(dto.companyId()).orElseThrow(() -> new ResourceNotFoundException("Company not found"));
         if(!company.getUserId().equals(userId)) throw new AccessDeniedException("You can't create that job");
         Job job = jobRepository.save(new Job(dto.title(), dto.city(), dto.description(), dto.companyId(), dto.salaryMax(), dto.salaryMin(), dto.skills(), dto.status()));
-        jobSearchRepository.save(toDocument(job));
+        try {
+            jobSearchRepository.save(toDocument(job));
+        } catch (Exception e) {
+            log.error("Failed to index job {} in ES", job.getId(), e);
+        }
         return job;
     }
 
@@ -80,12 +86,19 @@ public class JobService {
         job.setTitle(dto.title());
         job.setStatus(dto.status());
         job = jobRepository.update(job);
-        jobSearchRepository.save(toDocument(job));
+        try {
+            jobSearchRepository.save(toDocument(job));
+        } catch (Exception e) {
+            log.error("Failed to index job {} in ES", job.getId(), e);
+        }
         return job;
     }
 
     @Transactional
-    @CacheEvict(value = "jobs", key = "#id")
+    @Caching(evict =  {
+        @CacheEvict(value = "jobs", key = "#id"),
+        @CacheEvict(value = "skills", allEntries = true)
+    })
     public void deleteJob(Long id, Long userId, String role) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
@@ -95,7 +108,11 @@ public class JobService {
             if(!company.getUserId().equals(userId)) throw new AccessDeniedException("You don't own that job");
         }
         jobRepository.delete(id);
-        jobSearchRepository.deleteById(id);
+        try {
+            jobSearchRepository.deleteById((id));
+        } catch (Exception e) {
+            log.error("Failed to index job {} in ES", job.getId(), e);
+        }
     }
 
     @Cacheable(value = "jobs", key = "#id", unless = "#result.status.name() != 'PUBLISHED'")
