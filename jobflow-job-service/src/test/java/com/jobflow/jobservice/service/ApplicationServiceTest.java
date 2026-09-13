@@ -1,6 +1,5 @@
 package com.jobflow.jobservice.service;
 
-import com.jobflow.jobservice.config.KafkaTopicConfig;
 import com.jobflow.jobservice.domain.Application;
 import com.jobflow.jobservice.domain.Company;
 import com.jobflow.jobservice.domain.Job;
@@ -23,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import com.jobflow.jobservice.exception.InvalidStatusTransitionException;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -46,7 +45,7 @@ class ApplicationServiceTest {
     @Mock
     private CompanyRepository companyRepository;
     @Mock
-    private KafkaTemplate<String, Object> kafkaTemplate;
+    private ApplicationEventPublisher applicationEventPublisher;
     @Mock
     private RateLimiterService rateLimiterService;
 
@@ -54,7 +53,7 @@ class ApplicationServiceTest {
 
     @BeforeEach
     void setUp(){
-        applicationService = new ApplicationService(applicationRepository, jobRepository, userRepository, companyRepository, kafkaTemplate, rateLimiterService);
+        applicationService = new ApplicationService(applicationRepository, jobRepository, userRepository, companyRepository, applicationEventPublisher, rateLimiterService);
     }
 
     @Test
@@ -65,7 +64,7 @@ class ApplicationServiceTest {
         CreateApplicationDto dto = new CreateApplicationDto(1L);
 
         assertThatThrownBy(() -> applicationService.createApplication(dto, candidateId)).isInstanceOf(RateLimitExceededException.class);
-        verify(kafkaTemplate, never()).send(any(), any());
+        verify(applicationEventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -80,7 +79,7 @@ class ApplicationServiceTest {
         when(jobRepository.findById(dto.jobId())).thenReturn(Optional.of(draftJob));
 
         assertThatThrownBy(() -> applicationService.createApplication(dto, candidateId)).isInstanceOf(JobNotPublishedException.class);
-        verify(kafkaTemplate, never()).send(any(), any());
+        verify(applicationEventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -98,7 +97,7 @@ class ApplicationServiceTest {
 
 
         assertThatThrownBy(() -> applicationService.createApplication(dto, candidateId)).isInstanceOf(DuplicateResourceException.class);
-        verify(kafkaTemplate, never()).send(any(), any());
+        verify(applicationEventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -119,7 +118,7 @@ class ApplicationServiceTest {
 
         assertThat(result).isNotNull();
         verify(applicationRepository).save(any(Application.class));
-        verify(kafkaTemplate).send(eq(KafkaTopicConfig.APPLICATION_CREATED_TOPIC), any(ApplicationCreatedEvent.class));
+        verify(applicationEventPublisher).publishEvent(any(ApplicationCreatedEvent.class));
     }
 
     @Test
@@ -172,7 +171,7 @@ class ApplicationServiceTest {
     void getApplicationById_notFound_throwsResourceNotFoundException() {
         when(applicationRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> applicationService.getApplicationById(1L)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> applicationService.getApplicationById(1L, 2L, "COMPANY")).isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test

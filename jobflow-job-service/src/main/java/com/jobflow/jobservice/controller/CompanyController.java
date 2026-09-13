@@ -1,6 +1,6 @@
 package com.jobflow.jobservice.controller;
 
-import com.jobflow.jobservice.domain.Company;
+import com.jobflow.jobservice.dto.company.CompanyResponse;
 import com.jobflow.jobservice.dto.company.CreateCompanyDto;
 import com.jobflow.jobservice.dto.company.UpdateCompanyDto;
 import com.jobflow.jobservice.security.UserDetailsPrincipal;
@@ -34,9 +34,9 @@ public class CompanyController {
     })
     @PostMapping
     @PreAuthorize("hasRole('COMPANY')")
-    public ResponseEntity<Company> createCompany(@Valid @RequestBody CreateCompanyDto dto,
+    public ResponseEntity<CompanyResponse> createCompany(@Valid @RequestBody CreateCompanyDto dto,
                                                  @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(companyService.createCompany(dto, authenticatedUser.getId()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CompanyResponse.from(companyService.createCompany(dto, authenticatedUser.getId())));
     }
 
     @Operation(summary = "Update company")
@@ -48,9 +48,9 @@ public class CompanyController {
     })
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('COMPANY')")
-    public ResponseEntity<Company> updateCompany(@PathVariable Long id, @Valid @RequestBody UpdateCompanyDto dto,
+    public ResponseEntity<CompanyResponse> updateCompany(@PathVariable Long id, @Valid @RequestBody UpdateCompanyDto dto,
                                                  @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
-        return ResponseEntity.ok(companyService.updateCompany(id, dto, authenticatedUser.getId()));
+        return ResponseEntity.ok(CompanyResponse.from(companyService.updateCompany(id, dto, authenticatedUser.getId())));
     }
 
     @Operation(summary = "Delete company")
@@ -72,14 +72,14 @@ public class CompanyController {
             @ApiResponse(responseCode = "404", description = "Company not found")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Company> getCompanyById(@PathVariable Long id) {
-        return ResponseEntity.ok(companyService.getCompanyById(id));
+    public ResponseEntity<CompanyResponse> getCompanyById(@PathVariable Long id) {
+        return ResponseEntity.ok(CompanyResponse.from(companyService.getCompanyById(id)));
     }
 
     @Operation(summary = "Get companies by cities")
     @ApiResponse(responseCode = "200", description = "List of companies")
     @GetMapping
-    public ResponseEntity<List<Company>> getCompaniesByCity(@RequestParam List<String> cities) {
-        return ResponseEntity.ok(companyService.getCompaniesByCity(cities));
+    public ResponseEntity<List<CompanyResponse>> getCompaniesByCity(@RequestParam List<String> cities) {
+        return ResponseEntity.ok(companyService.getCompaniesByCity(cities).stream().map(CompanyResponse::from).toList());
     }
 }
