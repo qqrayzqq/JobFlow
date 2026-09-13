@@ -21,7 +21,7 @@ import com.jobflow.jobservice.repository.JobRepository;
 import com.jobflow.jobservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +40,7 @@ public class ApplicationService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final ApplicationEventPublisher applicationEventPublisher;
     private final RateLimiterService rateLimiterService;
 
     @Transactional
@@ -59,12 +59,7 @@ public class ApplicationService {
 
         Application saved = applicationRepository.save(new Application(dto.jobId(), candidateId));
         ApplicationCreatedEvent applicationCreatedEvent = new ApplicationCreatedEvent(saved.getId(), saved.getJobId(), saved.getCandidateId(), candidate.getEmail(), job.getTitle(), Instant.now());
-        kafkaTemplate.send(KafkaTopicConfig.APPLICATION_CREATED_TOPIC, applicationCreatedEvent)
-                .whenComplete((result, ex) -> {
-                    if (ex != null) {
-                        log.error("Failed to send ApplicationCreatedEvent for application {}", saved.getId(), ex);
-                    }
-                });
+        applicationEventPublisher.publishEvent(applicationCreatedEvent);
         return saved;
     }
 
@@ -92,12 +87,26 @@ public class ApplicationService {
         applicationRepository.delete(id);
     }
 
-    public Application getApplicationById(Long id) {
-        return applicationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+    public Application getApplicationById(Long id, Long userId, String role) {
+        Application application = applicationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+        if(role.equals("COMPANY")){
+            Job job = jobRepository.findById(application.getJobId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+            Company company = companyRepository.findById(job.getCompanyId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
+            if(!company.getUserId().equals(userId)) throw new AccessDeniedException("You don't own the job for this application");
+        }else{
+            if(!application.getCandidateId().equals(userId)) throw new AccessDeniedException("You can't get this application");
+        }
+        return application;
     }
 
-    public List<Application> getApplicationsByJob(Long jobId) {
+    public List<Application> getApplicationsByJob(Long jobId, Long userId) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+        Company company = companyRepository.findById(job.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
+        if(!company.getUserId().equals(userId)) throw new AccessDeniedException("You don't own this job");
         return applicationRepository.findByJobId(jobId);
     }
 

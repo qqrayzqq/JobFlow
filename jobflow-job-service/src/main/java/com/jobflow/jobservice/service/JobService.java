@@ -21,6 +21,7 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -187,6 +188,7 @@ public class JobService {
 
     // NOTE: loads the whole table at once; for large datasets use keyset pagination
     // (WHERE id > lastId ORDER BY id LIMIT n) + bulk saveAll per batch.
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void reindex() {
         List<Job> allJobs = jobRepository.findAll();
         List<JobDocument> jobDocuments = allJobs.stream().map(this::toDocument).toList();

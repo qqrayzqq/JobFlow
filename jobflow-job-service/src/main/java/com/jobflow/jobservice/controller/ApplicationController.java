@@ -76,8 +76,8 @@ public class ApplicationController {
     })
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('CANDIDATE') or hasRole('COMPANY')")
-    public ResponseEntity<Application> getApplicationById(@PathVariable Long id) {
-        return ResponseEntity.ok(applicationService.getApplicationById(id));
+    public ResponseEntity<Application> getApplicationById(@PathVariable Long id, @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        return ResponseEntity.ok(applicationService.getApplicationById(id, authenticatedUser.getId(), authenticatedUser.getRole()));
     }
 
     @Operation(summary = "Get applications by job")
@@ -87,8 +87,8 @@ public class ApplicationController {
     })
     @GetMapping("/job/{jobId}")
     @PreAuthorize("hasRole('COMPANY')")
-    public ResponseEntity<List<Application>> getApplicationsByJob(@PathVariable Long jobId) {
-        return ResponseEntity.ok(applicationService.getApplicationsByJob(jobId));
+    public ResponseEntity<List<Application>> getApplicationsByJob(@PathVariable Long jobId, @AuthenticationPrincipal UserDetailsPrincipal authenticatedUser) {
+        return ResponseEntity.ok(applicationService.getApplicationsByJob(jobId, authenticatedUser.getId()));
     }
 
     @Operation(summary = "Get applications by candidate")
